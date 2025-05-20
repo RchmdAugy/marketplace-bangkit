@@ -17,7 +17,6 @@ return new class extends Migration
         $table->text('deskripsi');
         $table->decimal('harga', 10, 2);
         $table->integer('stok');
-        $table->enum('status', ['pending', 'approved'])->default('pending');
         $table->unsignedBigInteger('user_id'); // Relasi Penjual (User)
         $table->timestamps();
 

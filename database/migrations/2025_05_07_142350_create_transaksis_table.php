@@ -14,14 +14,11 @@ return new class extends Migration
     Schema::create('transaksis', function (Blueprint $table) {
         $table->id();
         $table->unsignedBigInteger('user_id'); // Pembeli
-        $table->unsignedBigInteger('produk_id');
-        $table->integer('jumlah');
         $table->decimal('total_harga', 10, 2);
         $table->enum('status', ['menunggu pembayaran', 'diproses', 'dikirim', 'selesai'])->default('menunggu pembayaran');
         $table->timestamps();
 
         $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        $table->foreign('produk_id')->references('id')->on('produks')->onDelete('cascade');
     });
 }
 

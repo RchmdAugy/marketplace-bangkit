@@ -17,7 +17,6 @@ return new class extends Migration
         $table->string('email')->unique();
         $table->string('password');
         $table->enum('role', ['admin', 'penjual', 'pembeli']);
-        $table->enum('status', ['pending', 'approved'])->default('approved'); // hanya untuk penjual
         $table->timestamps();
     });
 

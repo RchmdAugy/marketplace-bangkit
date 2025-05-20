@@ -9,7 +9,7 @@ class Produk extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'user_id'];
+    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'user_id', 'foto'];
 
     // Relasi: Produk dimiliki oleh User (penjual)
     public function user()

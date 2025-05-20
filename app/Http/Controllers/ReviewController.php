@@ -28,23 +28,32 @@ class ReviewController extends Controller
         return view('review.create', compact('transaksi'));
     }
 
-    public function store(Request $request, $transaksi_id)
-    {
-        $transaksi = Transaksi::with('produk')->findOrFail($transaksi_id);
+public function store(Request $request, $transaksi_id)
+{
+    $request->validate([
+        'produk_id' => 'required|exists:produks,id',
+        'rating' => 'required|integer|min:1|max:5',
+        'komentar' => 'required|string',
+    ]);
 
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'komentar' => 'required',
-        ]);
+    // Cek apakah user sudah pernah review produk ini di transaksi ini
+    $sudahReview = \App\Models\Review::where('user_id', auth()->id())
+        ->where('produk_id', $request->produk_id)
+        ->where('transaksi_id', $transaksi_id)
+        ->exists();
 
-        Review::create([
-            'user_id' => Auth::id(),
-            'produk_id' => $transaksi->produk_id,
-            'transaksi_id' => $transaksi_id,
-            'rating' => $request->rating,
-            'komentar' => $request->komentar,
-        ]);
-
-        return redirect()->route('transaksi.index')->with('success', 'Ulasan berhasil dikirim.');
+    if ($sudahReview) {
+        return back()->withErrors('Anda sudah memberi ulasan untuk produk ini pada transaksi ini.');
     }
+
+    \App\Models\Review::create([
+        'user_id' => auth()->id(),
+        'produk_id' => $request->produk_id,
+        'transaksi_id' => $transaksi_id,
+        'rating' => $request->rating,
+        'komentar' => $request->komentar,
+    ]);
+
+    return redirect()->route('transaksi.index')->with('success', 'Ulasan berhasil dikirim.');
+}
 }

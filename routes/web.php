@@ -7,6 +7,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TransaksiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\KeranjangController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -41,4 +42,14 @@ Route::middleware(['auth'])->group(function() {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
+    Route::post('/keranjang/{produk_id}/add', [KeranjangController::class, 'add'])->name('keranjang.add');
+    Route::put('/keranjang/{id}/update', [KeranjangController::class, 'update'])->name('keranjang.update');
+    Route::get('/keranjang/{id}/remove', [KeranjangController::class, 'remove'])->name('keranjang.remove');
+    // Checkout dari keranjang
+    Route::put('/keranjang/checkout', [TransaksiController::class, 'checkoutKeranjang'])->name('keranjang.checkout');
+
+    Route::get('/profil', [App\Http\Controllers\ProfilController::class, 'show'])->name('profil.show');
+    Route::get('/profil/edit', [App\Http\Controllers\ProfilController::class, 'edit'])->name('profil.edit');
+    Route::post('/profil/update', [App\Http\Controllers\ProfilController::class, 'update'])->name('profil.update');
 });

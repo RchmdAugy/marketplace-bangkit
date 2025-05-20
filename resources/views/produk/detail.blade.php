@@ -1,34 +1,41 @@
+
 @extends('layout.public')
 @section('title', 'Detail Produk')
 
 @section('content')
-<h2 class="border-bottom pb-2 mb-3">Detail Produk</h2>
-
-<div class="card">
-    <h3>{{ $produk->nama }}</h3>
-    <p><strong>Harga:</strong> Rp {{ number_format($produk->harga,0,',','.') }}</p>
-    <p><strong>Stok:</strong> {{ $produk->stok }}</p>
-    <p><strong>Deskripsi:</strong><br>{{ $produk->deskripsi }}</p>
-    <hr>
-    <h4>Ulasan Produk</h4>
-    @php
-    $reviews = $produk->reviews()->with('user')->latest()->get();
-    @endphp
-    @if($reviews->count() > 0)
-        @foreach($reviews as $rev)
-            <div style="border:1px solid #ccc; padding:8px; margin-bottom:5px;">
-                <strong>{{ $rev->user->nama }}</strong> - Rating: {{ $rev->rating }} ⭐<br>
-                {{ $rev->komentar }}<br>
-                <small>Ditulis pada {{ $rev->created_at->format('d/m/Y') }}</small>
+<h2 class="mb-4 fw-bold text-primary text-center border-bottom pb-2">Detail Produk</h2>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body">
+                <div class="row">
+                    @if($produk->foto)
+                    <div class="col-md-5 mb-3 mb-md-0">
+                        <img src="{{ asset('foto_produk/'.$produk->foto) }}" alt="Foto Produk" class="img-fluid rounded w-100" style="object-fit:cover;max-height:300px;">
+                    </div>
+                    @endif
+                    <div class="{{ $produk->foto ? 'col-md-7' : 'col-12' }}">
+                        <h3 class="card-title mb-3 fw-bold text-primary">{{ $produk->nama }}</h3>
+                        <div class="mb-2">
+                            <span class="badge bg-success fs-6">Rp {{ number_format($produk->harga,0,',','.') }}</span>
+                            <span class="badge bg-secondary ms-2">Stok: {{ $produk->stok }}</span>
+                        </div>
+                        <p class="card-text mt-3"><strong>Deskripsi:</strong><br>{{ $produk->deskripsi }}</p>
+                        <p class="mt-3"><strong>Penjual:</strong> {{ $produk->user->nama }}</p>
+                        <div class="d-flex gap-2 mt-4">
+                            <a class="btn btn-outline-primary rounded-pill px-4" href="{{ route('produk.index') }}"><i class="fa fa-arrow-left"></i> Kembali</a>
+                            @if(Auth::check() && Auth::user()->role == 'pembeli')
+                                <form action="{{ route('keranjang.add', $produk->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <input type="number" name="jumlah" value="1" min="1" max="{{ $produk->stok }}" style="width:70px;">
+                                    <button class="btn btn-warning rounded-pill px-4"><i class="fa fa-cart-plus"></i> Tambah ke Keranjang</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
-        @endforeach
-    @else
-        <p>Belum ada ulasan untuk produk ini.</p>
-    @endif
-    <p><strong>Penjual:</strong> {{ $produk->user->nama }}</p>
-    <a class="btn btn-primary btn-sm" href="{{ route('produk.index') }}">Kembali ke Daftar Produk</a>
-    @if(Auth::check() && Auth::user()->role == 'pembeli')
-        <a class="btn btn-primary btn-sm" href="{{ route('checkout', $produk->id) }}">Beli Sekarang</a>
-    @endif
+        </div>
+    </div>
 </div>
 @endsection

@@ -10,9 +10,15 @@ use App\Http\Controllers\Controller;
 class ProdukController extends Controller
 {
     public function index() {
+    if (Auth::check() && Auth::user()->role == 'penjual') {
+        // Hanya tampilkan produk milik penjual yang login
+        $produks = Produk::where('user_id', Auth::id())->get();
+    } else {
+        // Untuk admin/pembeli, tampilkan semua produk
         $produks = Produk::all();
-        return view('produk.index', compact('produks'));
     }
+    return view('produk.index', compact('produks'));
+}
 
     public function create() {
         return view('produk.create');
@@ -24,14 +30,23 @@ class ProdukController extends Controller
             'deskripsi' => 'required',
             'harga' => 'required|numeric',
             'stok' => 'required|numeric',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
+
+        $foto = null;
+        if ($request->hasFile('foto')) {
+            $file = $request->file('foto');
+            $foto = time().'_'.$file->getClientOriginalName();
+            $file->move(public_path('foto_produk'), $foto);
+        }
 
         Produk::create([
             'nama' => $request->nama,
             'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
-            'user_id' => Auth::user()->id
+            'user_id' => Auth::user()->id,
+            'foto' => $foto
         ]);
 
         return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan.');
@@ -53,14 +68,28 @@ class ProdukController extends Controller
             'deskripsi' => 'required',
             'harga' => 'required|numeric',
             'stok' => 'required|numeric',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         $produk = Produk::findOrFail($id);
+
+        $foto = $produk->foto;
+        if ($request->hasFile('foto')) {
+            // Hapus foto lama jika ada
+            if ($foto && file_exists(public_path('foto_produk/'.$foto))) {
+                unlink(public_path('foto_produk/'.$foto));
+            }
+            $file = $request->file('foto');
+            $foto = time().'_'.$file->getClientOriginalName();
+            $file->move(public_path('foto_produk'), $foto);
+        }
+
         $produk->update([
             'nama' => $request->nama,
             'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
+            'foto' => $foto
         ]);
 
         return redirect()->route('produk.index')->with('success', 'Produk berhasil diperbarui.');

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Keranjang;
 use App\Models\Produk;
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
-
+use Illuminate\Support\Facades\DB;
 
 class TransaksiController extends Controller
 {
@@ -59,9 +60,9 @@ class TransaksiController extends Controller
         } 
         // Kalau seller → lihat transaksi produk dia saja
         elseif (Auth::user()->role == 'penjual') {
-            $pesanans = Transaksi::whereHas('produk', function($q){
+            $pesanans = \App\Models\Transaksi::whereHas('details.produk', function($q) {
                 $q->where('user_id', Auth::id());
-            })->with(['produk', 'user'])->get();
+            })->with('details.produk', 'user')->get();
         } 
         else {
             return redirect()->route('home')->withErrors('Akses ditolak.');
@@ -70,34 +71,55 @@ class TransaksiController extends Controller
         return view('transaksi.pesanan', compact('pesanans'));
     }
 
-    public function updateStatus(Request $request, $id)
-    {
-        $transaksi = Transaksi::findOrFail($id);
+public function updateStatus(Request $request, $id)
+{
+    $transaksi = Transaksi::with('details.produk')->findOrFail($id);
 
-        // Validasi akses: hanya admin/seller produk ini yg boleh update
-        if(Auth::user()->role == 'admin' || (Auth::user()->role == 'penjual' && $transaksi->produk->user_id == Auth::id())) {
-            $request->validate([
-                'status' => 'required|in:menunggu pembayaran,diproses,dikirim,selesai',
-            ]);
-
-            $transaksi->status = $request->status;
-            $transaksi->save();
-
-            return back()->with('success', 'Status pesanan berhasil diperbarui.');
-        } else {
-            return back()->withErrors('Akses ditolak.');
+    // Cek apakah penjual punya produk di transaksi ini
+    $isSeller = false;
+    if (Auth::user()->role == 'penjual') {
+        foreach ($transaksi->details as $detail) {
+            if ($detail->produk && $detail->produk->user_id == Auth::id()) {
+                $isSeller = true;
+                break;
+            }
         }
     }
-    public function cetakInvoice($id)
+
+    if(Auth::user()->role == 'admin' || $isSeller) {
+        $request->validate([
+            'status' => 'required|in:menunggu pembayaran,diproses,dikirim,selesai',
+        ]);
+
+        $transaksi->status = $request->status;
+        $transaksi->save();
+
+        return back()->with('success', 'Status pesanan berhasil diperbarui.');
+    } else {
+        return back()->withErrors('Akses ditolak.');
+    }
+}
+
+public function cetakInvoice($id)
 {
-    $transaksi = Transaksi::with(['produk', 'user'])->findOrFail($id);
+    $transaksi = Transaksi::with(['details.produk', 'user'])->findOrFail($id);
 
     // Validasi akses + status pesanan sudah layak invoice
+    $isSeller = false;
+    if (Auth::user()->role == 'penjual') {
+        foreach ($transaksi->details as $detail) {
+            if ($detail->produk && $detail->produk->user_id == Auth::id()) {
+                $isSeller = true;
+                break;
+            }
+        }
+    }
+
     if(
         in_array($transaksi->status, ['dikirim', 'selesai']) &&
         ( Auth::user()->role == 'admin' ||
-          Auth::id() == $transaksi->user_id ||
-          (Auth::user()->role == 'penjual' && $transaksi->produk->user_id == Auth::id())
+        Auth::id() == $transaksi->user_id ||
+        $isSeller
         )
     ) {
         $pdf = Pdf::loadView('transaksi.invoice', compact('transaksi'));
@@ -107,6 +129,51 @@ class TransaksiController extends Controller
     }
 }
 
+public function checkoutKeranjang(Request $request)
+{
+    $user = Auth::user();
+    $keranjangs = Keranjang::where('user_id', $user->id)->with('produk')->get();
 
+    if ($keranjangs->isEmpty()) {
+        return redirect()->route('keranjang.index')->with('error', 'Keranjang Anda kosong.');
+    }
+
+    DB::beginTransaction();
+    try {
+        $total = 0;
+        foreach ($keranjangs as $item) {
+            if ($item->jumlah > $item->produk->stok) {
+                DB::rollBack();
+                return redirect()->route('keranjang.index')->with('error', 'Stok produk '.$item->produk->nama.' tidak mencukupi.');
+            }
+            $total += $item->jumlah * $item->produk->harga;
+        }
+
+        // Buat transaksi utama
+        $transaksi = \App\Models\Transaksi::create([
+            'user_id' => $user->id,
+            'total_harga' => $total,
+            'status' => 'menunggu pembayaran'
+        ]);
+
+        // Buat detail transaksi
+        foreach ($keranjangs as $item) {
+            $item->produk->decrement('stok', $item->jumlah);
+            \App\Models\TransaksiDetail::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $item->produk_id,
+                'jumlah' => $item->jumlah,
+                'harga' => $item->produk->harga
+            ]);
+        }
+
+        Keranjang::where('user_id', $user->id)->delete();
+        DB::commit();
+        return redirect()->route('transaksi.index')->with('success', 'Checkout berhasil!');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->route('keranjang.index')->with('error', 'Terjadi kesalahan saat checkout.');
+    }
+}
 
 }

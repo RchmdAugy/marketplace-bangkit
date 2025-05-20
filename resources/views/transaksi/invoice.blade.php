@@ -20,8 +20,18 @@
     <tr><th>No Invoice</th><td>#INV{{ $transaksi->id }}</td></tr>
     <tr><th>Tanggal</th><td>{{ $transaksi->created_at->format('d-m-Y') }}</td></tr>
     <tr><th>Nama Pembeli</th><td>{{ $transaksi->user->nama }}</td></tr>
-    <tr><th>Produk</th><td>{{ $transaksi->produk->nama }}</td></tr>
-    <tr><th>Jumlah</th><td>{{ $transaksi->jumlah }}</td></tr>
+    <tr>
+        <th>Produk</th>
+        <td>
+            <ul style="margin:0; padding-left:18px;">
+                @foreach($transaksi->details as $detail)
+                    <li>
+                        {{ $detail->produk->nama ?? '-' }} ({{ $detail->jumlah }} x Rp {{ number_format($detail->harga,0,',','.') }})
+                    </li>
+                @endforeach
+            </ul>
+        </td>
+    </tr>
     <tr><th>Total Harga</th><td>Rp {{ number_format($transaksi->total_harga,0,',','.') }}</td></tr>
     <tr><th>Status</th><td>{{ ucfirst($transaksi->status) }}</td></tr>
 </table>

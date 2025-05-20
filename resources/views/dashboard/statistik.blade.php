@@ -1,33 +1,55 @@
+
 @extends('layout.public')
 @section('title', 'Dashboard Statistik')
 
 @section('content')
-<h2 class="border-bottom pb-2 mb-3">Dashboard Statistik</h2>
+<h2 class="mb-4 fw-bold text-primary text-center border-bottom pb-2">Dashboard Statistik</h2>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card text-center bg-primary text-white">
-            <h3>{{ $total_produk }}</h3>
-            <p>Jumlah Produk</p>
+
+<div class="row mb-4 g-4">
+    <div class="col-md-3">
+        <div class="card shadow border-0 rounded-4 text-center py-4 bg-primary text-white">
+            <div class="mb-2">
+                <i class="fa fa-box-open fa-2x"></i>
+            </div>
+            <h3 class="fw-bold mb-0">{{ $total_produk }}</h3>
+            <div class="fw-semibold">Jumlah Produk</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-center bg-success text-white">
-            <h3>{{ $total_transaksi }}</h3>
-            <p>Jumlah Transaksi</p>
+    <div class="col-md-3">
+        <div class="card shadow border-0 rounded-4 text-center py-4 bg-success text-white">
+            <div class="mb-2">
+                <i class="fa fa-exchange-alt fa-2x"></i>
+            </div>
+            <h3 class="fw-bold mb-0">{{ $total_transaksi }}</h3>
+            <div class="fw-semibold">Jumlah Transaksi</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-center bg-warning text-dark">
-            <h3>{{ $total_ulasan }}</h3>
-            <p>Jumlah Ulasan</p>
+    <div class="col-md-3">
+        <div class="card shadow border-0 rounded-4 text-center py-4 bg-warning text-dark">
+            <div class="mb-2">
+                <i class="fa fa-star fa-2x"></i>
+            </div>
+            <h3 class="fw-bold mb-0">{{ $total_ulasan }}</h3>
+            <div class="fw-semibold">Jumlah Ulasan</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow border-0 rounded-4 text-center py-4 bg-info text-white">
+            <div class="mb-2">
+                <i class="fa fa-money-bill-wave fa-2x"></i>
+            </div>
+            <h3 class="fw-bold mb-0">Rp {{ number_format($total_profit,0,',','.') }}</h3>
+            <div class="fw-semibold">Total Profit</div>
         </div>
     </div>
 </div>
 
-<div class="card">
-    <h4>Grafik Transaksi per Bulan</h4>
-    <canvas id="chart" height="100"></canvas>
+<div class="card shadow border-0 rounded-4 mt-4">
+    <div class="card-body">
+        <h4 class="fw-bold text-primary mb-3"><i class="fa fa-chart-bar me-2"></i>Grafik Transaksi per Bulan</h4>
+        <canvas id="chart" height="100"></canvas>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -40,10 +62,15 @@
             datasets: [{
                 label: 'Jumlah Transaksi',
                 data: {!! json_encode(array_values($grafik->toArray())) !!},
-                backgroundColor: '#1abc9c'
+                backgroundColor: '#1abc9c',
+                borderRadius: 8,
+                maxBarThickness: 40
             }]
         },
         options: {
+            plugins: {
+                legend: { display: false }
+            },
             scales: {
                 y: { beginAtZero: true }
             }
