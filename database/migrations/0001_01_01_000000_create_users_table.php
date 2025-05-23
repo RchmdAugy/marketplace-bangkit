@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+ public function up()
 {
     Schema::create('users', function (Blueprint $table) {
         $table->id();
@@ -17,8 +17,20 @@ return new class extends Migration
         $table->string('email')->unique();
         $table->string('password');
         $table->enum('role', ['admin', 'penjual', 'pembeli']);
+        $table->boolean('is_approved')->default(true); // tambahkan ini
         $table->timestamps();
     });
+
+    // Tambahkan akun admin langsung
+    DB::table('users')->insert([
+        'nama' => 'Admin1',
+        'email' => 'admin@gmail.com',
+        'password' => Hash::make('admin123'), // ganti password sesuai keinginan
+        'role' => 'admin',
+        'is_approved' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

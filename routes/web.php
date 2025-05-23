@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KeranjangController;
 
+use App\Http\Controllers\Admin\UserApprovalController;
+
+
+    Route::get('/admin/approval', [UserApprovalController::class, 'index'])->name('admin.approval');
+    Route::post('/admin/approval/{id}/approve', [UserApprovalController::class, 'approve'])->name('admin.approval.approve');
+
+
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -44,10 +52,10 @@ Route::middleware(['auth'])->group(function() {
 
     Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
     Route::post('/keranjang/{produk_id}/add', [KeranjangController::class, 'add'])->name('keranjang.add');
-    Route::put('/keranjang/{id}/update', [KeranjangController::class, 'update'])->name('keranjang.update');
+    Route::post('/keranjang/{id}/update', [KeranjangController::class, 'update'])->name('keranjang.update');
     Route::get('/keranjang/{id}/remove', [KeranjangController::class, 'remove'])->name('keranjang.remove');
     // Checkout dari keranjang
-    Route::put('/keranjang/checkout', [TransaksiController::class, 'checkoutKeranjang'])->name('keranjang.checkout');
+    Route::post('/keranjang/checkout', [TransaksiController::class, 'checkoutKeranjang'])->name('keranjang.checkout');
 
     Route::get('/profil', [App\Http\Controllers\ProfilController::class, 'show'])->name('profil.show');
     Route::get('/profil/edit', [App\Http\Controllers\ProfilController::class, 'edit'])->name('profil.edit');
