@@ -1,9 +1,8 @@
-
 @extends('layout.public')
 @section('title', 'Riwayat Transaksi')
 
 @section('content')
-<h2 class="mb-4 fw-bold text-primary text-center border-bottom pb-2">Riwayat Transaksi Saya</h2>
+<h2 class="mb-4 fw-bold text-center border-bottom pb-2">Riwayat Transaksi Saya</h2>
 
 @if(session('success'))
 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -18,7 +17,7 @@
         <div class="card shadow border-0 rounded-4 mb-3 h-100">
             <div class="card-body d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="fw-bold text-primary mb-0">#{{ $trx->id }}</h5>
+                    <h5 class="fw-bold mb-0">#{{ $trx->id }}</h5>
                     <span class="badge 
                         {{ $trx->status == 'selesai' ? 'bg-success' : 
                            ($trx->status == 'dikirim' ? 'bg-info' : 
@@ -39,7 +38,7 @@
                     @endforeach
                 </ul>
                 <div class="d-flex justify-content-between align-items-center mt-auto">
-                    <span class="fw-bold fs-6" style="color:#1abc9c;">Total: Rp {{ number_format($trx->total_harga,0,',','.') }}</span>
+                    <span class="fw-bold fs-6 text-success">Total: Rp {{ number_format($trx->total_harga,0,',','.') }}</span>
                     <div class="d-flex gap-2 flex-wrap">
                         @if(in_array($trx->status, ['dikirim', 'selesai']))
                             <a class="btn btn-success btn-sm rounded-pill px-3" href="{{ route('transaksi.invoice', $trx->id) }}">
@@ -54,6 +53,17 @@
                         <a class="btn btn-outline-primary btn-sm rounded-pill px-3" href="{{ route('transaksi.show', $trx->id) }}">
                             <i class="fa fa-eye"></i> Detail
                         </a>
+                        @if(Auth::user() && (Auth::user()->role == 'admin' || Auth::user()->role == 'penjual') && $trx->status != 'selesai')
+                        <form action="{{ route('pesanan.updateStatus', $trx->id) }}" method="POST" class="d-inline-block ms-2">
+                            @csrf
+                            <select name="status" class="form-select form-select-sm d-inline w-auto" style="min-width:120px;display:inline-block;" onchange="this.form.submit()">
+                                <option value="menunggu pembayaran" @if($trx->status=='menunggu pembayaran') selected @endif>Menunggu</option>
+                                <option value="diproses" @if($trx->status=='diproses') selected @endif>Diproses</option>
+                                <option value="dikirim" @if($trx->status=='dikirim') selected @endif>Dikirim</option>
+                                <option value="selesai" @if($trx->status=='selesai') selected @endif>Selesai</option>
+                            </select>
+                        </form>
+                        @endif
                     </div>
                 </div>
             </div>

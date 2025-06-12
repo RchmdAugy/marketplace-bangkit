@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use App\Models\TransaksiDetail;
 
 class TransaksiController extends Controller
 {
@@ -20,10 +21,8 @@ class TransaksiController extends Controller
     }
 
     public function show($id) {
-        $transaksi = Transaksi::findOrFail($id);
-        $produk = $transaksi->produk; // ambil relasi produk dari transaksi
-    
-        return view('transaksi.detail', compact('transaksi', 'produk'));
+        $transaksi = Transaksi::with('details.produk', 'user')->findOrFail($id);
+        return view('transaksi.detail', compact('transaksi'));
     }
     
 
@@ -38,19 +37,55 @@ class TransaksiController extends Controller
 
         $request->validate([
             'jumlah' => 'required|numeric|min:1|max:' . $produk->stok,
+            'alamat' => 'required|string',
         ]);
 
         $total = $produk->harga * $request->jumlah;
 
-        Transaksi::create([
+        $transaksi = Transaksi::create([
             'user_id' => Auth::id(),
             'produk_id' => $produk->id,
             'jumlah' => $request->jumlah,
             'total_harga' => $total,
             'status' => 'menunggu pembayaran',
+            'alamat_pengiriman' => $request->alamat,
         ]);
 
-        return redirect()->route('transaksi.index')->with('success', 'Pesanan berhasil dibuat. Lakukan pembayaran.');
+        // Buat Snap Token Midtrans
+        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+        \Midtrans\Config::$isProduction = false;
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
+
+        $payload = [
+            'transaction_details' => [
+                'order_id' => 'TRX-' . $transaksi->id . '-' . time(),
+                'gross_amount' => $total,
+            ],
+            'customer_details' => [
+                'first_name' => Auth::user()->name,
+                'email' => Auth::user()->email,
+            ],
+            'item_details' => [
+                [
+                    'id' => $produk->id,
+                    'price' => $produk->harga,
+                    'quantity' => $request->jumlah,
+                    'name' => $produk->nama
+                ]
+            ],
+            'finish_redirect_url' => route('transaksi.index'),
+        ];
+
+        try {
+            $snapToken = \Midtrans\Snap::getSnapToken($payload);
+            $transaksi->snap_token = $snapToken;
+            $transaksi->save();
+        } catch (\Exception $e) {
+            \Log::error('Midtrans Snap Error: ' . $e->getMessage());
+        }
+
+        return redirect()->route('transaksi.pembayaran', $transaksi->id);
     }
 
     public function pesanan() {
@@ -138,6 +173,10 @@ public function checkoutKeranjang(Request $request)
         return redirect()->route('keranjang.index')->with('error', 'Keranjang Anda kosong.');
     }
 
+    $request->validate([
+        'alamat' => 'required|string',
+    ]);
+
     DB::beginTransaction();
     try {
         $total = 0;
@@ -149,31 +188,142 @@ public function checkoutKeranjang(Request $request)
             $total += $item->jumlah * $item->produk->harga;
         }
 
-        // Buat transaksi utama
-        $transaksi = \App\Models\Transaksi::create([
+        $total_bayar = $total; // Tidak ada ongkir
+
+        $transaksi = Transaksi::create([
             'user_id' => $user->id,
-            'total_harga' => $total,
-            'status' => 'menunggu pembayaran'
+            'total_harga' => $total_bayar,
+            'status' => 'menunggu pembayaran',
+            'alamat_pengiriman' => $request->alamat,
+            // 'ongkir' => 0, // Tidak perlu lagi
         ]);
 
-        // Buat detail transaksi
+        // Buat detail transaksi untuk setiap item di keranjang
         foreach ($keranjangs as $item) {
-            $item->produk->decrement('stok', $item->jumlah);
-            \App\Models\TransaksiDetail::create([
+            TransaksiDetail::create([
                 'transaksi_id' => $transaksi->id,
                 'produk_id' => $item->produk_id,
                 'jumlah' => $item->jumlah,
-                'harga' => $item->produk->harga
+                'harga' => $item->produk->harga, // Harga saat transaksi dilakukan
             ]);
+            // Kurangi stok produk
+            $item->produk->decrement('stok', $item->jumlah);
         }
 
+        // Hapus item dari keranjang setelah checkout
         Keranjang::where('user_id', $user->id)->delete();
+
+        // Buat Snap Token Midtrans
+        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+        \Midtrans\Config::$isProduction = false;
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
+
+        $payload = [
+            'transaction_details' => [
+                'order_id' => 'TRX-' . $transaksi->id . '-' . time(),
+                'gross_amount' => $total_bayar,
+            ],
+            'customer_details' => [
+                'first_name' => $user->name,
+                'email' => $user->email,
+            ],
+            'item_details' => $keranjangs->map(function($item) {
+                return [
+                    'id' => $item->produk_id,
+                    'price' => $item->produk->harga,
+                    'quantity' => $item->jumlah,
+                    'name' => $item->produk->nama
+                ];
+            })->toArray(),
+            'finish_redirect_url' => route('transaksi.index'),
+        ];
+
+        try {
+            $snapToken = \Midtrans\Snap::getSnapToken($payload);
+            $transaksi->snap_token = $snapToken;
+            $transaksi->save();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Midtrans Snap Error: ' . $e->getMessage());
+            return redirect()->route('keranjang.index')->with('error', 'Gagal membuat pembayaran: ' . $e->getMessage());
+        }
+
         DB::commit();
-        return redirect()->route('transaksi.index')->with('success', 'Checkout berhasil!');
+        return redirect()->route('transaksi.pembayaran', $transaksi->id);
     } catch (\Exception $e) {
         DB::rollBack();
-        return redirect()->route('keranjang.index')->with('error', 'Terjadi kesalahan saat checkout.');
+        \Log::error('Checkout Keranjang Error: ' . $e->getMessage());
+        return redirect()->route('keranjang.index')->with('error', 'Terjadi kesalahan saat checkout: ' . $e->getMessage());
     }
 }
+
+public function showPembayaran($id)
+{
+    $transaksi = Transaksi::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+    return view('transaksi.pembayaran', compact('transaksi'));
+}
+
+public function konfirmasiPembayaran(Request $request, $id)
+{
+    \Log::info('konfirmasiPembayaran dipanggil untuk transaksi ID: ' . $id);
+    \Log::info('Request headers: ' . json_encode($request->headers->all()));
+    \Log::info('Request full data: ' . json_encode($request->all()));
+
+    $transaksi = Transaksi::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+
+    $jsonCallback = json_decode($request->json, true);
+    \Log::info('Midtrans JSON Callback after decode: ' . json_encode($jsonCallback));
+
+    // Cek apakah ada data callback dari Midtrans
+    if (empty($jsonCallback) || !isset($jsonCallback['transaction_status'])) {
+        \Log::warning('Midtrans JSON Callback tidak lengkap atau kosong untuk transaksi ID: ' . $id);
+        // Jika callback tidak lengkap, pertahankan status sebelumnya atau set ke pending jika transaksi masih baru
+        if ($transaksi->status == 'menunggu pembayaran') {
+            $transaksi->status = 'pending';
+        }
+    } else {
+        $transactionStatus = $jsonCallback['transaction_status'];
+        $fraudStatus = $jsonCallback['fraud_status'] ?? null;
+
+        if ($transactionStatus == 'capture') {
+            // Untuk kartu kredit berstatus capture
+            if ($fraudStatus == 'challenge') {
+                $transaksi->status = 'challenge';
+            } else if ($fraudStatus == 'accept') {
+                $transaksi->status = 'diproses';
+            }
+        } else if ($transactionStatus == 'settlement') {
+            // Pembayaran berhasil (misal: VA, Qris, Gopay, dll)
+            $transaksi->status = 'diproses';
+        } else if (
+            $transactionStatus == 'cancel' ||
+            $transactionStatus == 'expire' ||
+            $transactionStatus == 'deny'
+        ) {
+            // Pembayaran dibatalkan/kadaluarsa/ditolak
+            $transaksi->status = 'dibatalkan';
+        } else if ($transactionStatus == 'pending') {
+            // Pembayaran masih menunggu
+            $transaksi->status = 'menunggu pembayaran';
+        } else {
+            // Status Midtrans tidak dikenali
+            \Log::warning('Midtrans transaction_status tidak dikenali: ' . $transactionStatus . ' untuk transaksi ID: ' . $id);
+            // Pertahankan status sebelumnya atau set ke pending
+            if ($transaksi->status == 'menunggu pembayaran') {
+                $transaksi->status = 'pending';
+            }
+        }
+    }
+
+    $transaksi->save();
+    
+    // Logging status akhir
+    \Log::info('Status transaksi diperbarui menjadi: ' . $transaksi->status . ' untuk transaksi ID: ' . $id);
+
+    // Redirect ke halaman transaksi.index setelah update status
+    return redirect()->route('transaksi.index')->with('success', 'Status pembayaran berhasil diperbarui.');
+}
+
 
 }

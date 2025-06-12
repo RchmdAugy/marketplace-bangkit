@@ -104,7 +104,7 @@
 <body>
     <div class="container">
         @yield('content')
-        <footer>&copy; {{ date('Y') }} Marketplace Bangkit. All rights reserved.</footer>
+        <footer>&copy; {{ date('Y') }} Marketplace Bangkit. s reserved.</footer>
     </div>
 </body>
 </html>

@@ -13,7 +13,7 @@ class ReviewController extends Controller
 {
     public function create($transaksi_id)
     {
-        $transaksi = Transaksi::with('produk')->findOrFail($transaksi_id);
+        $transaksi = Transaksi::with('details.produk')->findOrFail($transaksi_id);
 
         // Validasi: transaksi milik user & status selesai
         if($transaksi->user_id != Auth::id() || $transaksi->status != 'selesai') {

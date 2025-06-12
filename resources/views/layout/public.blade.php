@@ -10,20 +10,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --primary-color: #1abc9c;
+            --primary-dark-color: #16a085;
+            --secondary-color: #2c3e50;
+            --light-bg-color: #f8f9fa;
+            --white-color: #ffffff;
+            --border-color: #e0e0e0;
+            --shadow-color: rgba(0,0,0,0.08);
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
+            background-color: var(--light-bg-color);
             margin: 0;
             padding: 0;
         }
 
         .navbar {
-            background-color: #1abc9c;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 6px var(--shadow-color);
         }
 
         .navbar-brand, .nav-link {
-            color: white !important;
+            color: var(--white-color) !important;
             font-weight: 500;
         }
 
@@ -32,21 +42,34 @@
         }
 
         .btn-primary {
-            background-color: #ffffff;
-            color: #1abc9c;
-            border: 2px solid #1abc9c;
+            background-color: var(--white-color);
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
             font-weight: bold;
+            transition: all 0.3s ease;
         }
 
         .btn-primary:hover {
-            background-color: #e9f7f5;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: var(--white-color);
         }
 
         .hero {
             padding: 100px 20px;
             text-align: center;
-            background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark-color) 100%);
+            color: var(--white-color);
         }
 
         .hero h1 {
@@ -68,28 +91,28 @@
             border-radius: 16px;
             padding: 30px 20px;
             transition: all 0.3s ease-in-out;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px var(--shadow-color);
         }
 
         .features .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 20px var(--shadow-color);
         }
 
         .features i {
             font-size: 2.5rem;
-            color: #1abc9c;
+            color: var(--primary-color);
             margin-bottom: 20px;
         }
 
         footer {
-            background-color: #2c3e50;
-            color: white;
+            background-color: var(--secondary-color);
+            color: var(--white-color);
             padding: 40px 0 20px;
         }
 
         footer a {
-            color: #ecf0f1;
+            color: var(--white-color);
             text-decoration: none;
         }
 
@@ -104,8 +127,29 @@
             font-size: 0.9rem;
         }
         .card:hover { 
-            box-shadow: 0 8px 32px rgba(26,188,156,0.15) !important; transform: translateY(-4px); transition: .2s; 
+            box-shadow: 0 8px 32px rgba(26,188,156,0.15) !important; 
+            transform: translateY(-4px); 
+            transition: .2s; 
         }
+        
+        /* Tambahan untuk konsistensi */
+        /* Menghapus override warna teks untuk h1-h6 agar tidak menyatu dengan background */
+        /* .text-primary, h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color) !important;
+        } */
+        .badge.bg-primary {
+            background-color: var(--primary-color) !important;
+        }
+        .table-primary {
+            --bs-table-bg: var(--primary-color);
+            --bs-table-border-color: var(--primary-dark-color);
+            color: var(--white-color);
+        }
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(26, 188, 156, 0.25);
+        }
+
     </style>
 </head>
 <body>
@@ -229,13 +273,13 @@
             </div>
         </div>
         <div class="footer-bottom">
-            &copy; {{ date('Y') }} Marketplace BANGKIT. All rights reserved.
+            &copy; {{ date('Y') }} Marketplace BANGKIT. s reserved.
         </div>
     </div>
 </footer>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+@stack('scripts')
 </body>
 </html>

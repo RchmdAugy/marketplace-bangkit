@@ -64,4 +64,40 @@ class DashboardController extends Controller
 
     return view('dashboard.statistik', compact('total_produk', 'total_transaksi', 'total_ulasan', 'grafik'));
 }
+
+    public function statistik()
+    {
+        $total_produk = Produk::count();
+        $total_transaksi = Transaksi::count();
+        $total_ulasan = \App\Models\Review::count();
+        $total_profit = Transaksi::where('status', 'selesai')->sum('total_harga');
+
+        // Data untuk grafik transaksi per bulan
+        $grafik = Transaksi::selectRaw('MONTH(created_at) as bulan, COUNT(*) as total')
+            ->whereYear('created_at', date('Y'))
+            ->groupBy('bulan')
+            ->pluck('total', 'bulan');
+
+        // Data untuk pie chart status transaksi
+        $status_transaksi = Transaksi::selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        // Pastikan semua status ada dalam data
+        $status_labels = ['menunggu pembayaran', 'diproses', 'dikirim', 'selesai'];
+        $status_data = [];
+        foreach ($status_labels as $status) {
+            $status_data[$status] = $status_transaksi[$status] ?? 0;
+        }
+
+        return view('dashboard.statistik', compact(
+            'total_produk',
+            'total_transaksi',
+            'total_ulasan',
+            'total_profit',
+            'grafik',
+            'status_data'
+        ));
+    }
 }

@@ -53,7 +53,7 @@ class ProdukController extends Controller
     }
 
     public function show($id) {
-        $produk = Produk::findOrFail($id);
+        $produk = Produk::with('reviews.user')->findOrFail($id);
         return view('produk.detail', compact('produk'));
     }
 
