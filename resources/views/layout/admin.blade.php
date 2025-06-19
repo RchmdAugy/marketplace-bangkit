@@ -1,112 +1,45 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Admin - @yield('title')</title>
-    
-    <!-- Bootstrap & Font Awesome -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f8f9fc;
-        }
-        .sidebar {
-            height: 100vh;
-            background-color: #343a40;
-            color: white;
-        }
-        .sidebar a {
-            color: white;
-            text-decoration: none;
-        }
-        .sidebar a:hover {
-            background-color: #495057;
-        }
-        .sidebar .nav-link.active {
-            background-color: #1abc9c;
-        }
-        .navbar {
-            background-color: #fff;
-            border-bottom: 1px solid #e3e6f0;
-        }
-        .content-wrapper {
-            min-height: 100vh;
-            padding: 20px;
-            background-color: #f8f9fc;
-        }
-        .sidebar .nav-link i {
-            width: 20px;
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('admin_assets/img/apple-icon.png') }}" />
+    <link rel="icon" type="image/png" href="{{ asset('admin_assets/img/favicon.png') }}" />
+    <title>@yield('title', 'Admin Dashboard')</title>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+    <link href="{{ asset('admin_assets/css/nucleo-icons.css') }}" rel="stylesheet" />
+    <link href="{{ asset('admin_assets/css/nucleo-svg.css') }}" rel="stylesheet" />
+    <link href="{{ asset('admin_assets/css/argon-dashboard-tailwind.css?v=1.0.1') }}" rel="stylesheet" />
 </head>
-<body>
+<body class="m-0 font-sans text-base antialiased font-normal dark:bg-slate-900 leading-default bg-gray-50 text-slate-500">
+    <div class="absolute w-full bg-blue-500 dark:hidden min-h-75"></div>
+    
+    @include('layout.partials._sidebar')
 
-<div class="d-flex" id="wrapper">
-    <!-- Sidebar -->
-    <div class="sidebar p-3" id="sidebar-wrapper">
-        <h4 class="text-center fw-bold mb-4">
-            <i class="fa fa-user-shield me-2"></i>ADMIN
-        </h4>
-        <ul class="nav flex-column gap-1">
-            <li class="nav-item">
-                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}">
-                    <i class="fa fa-chart-line"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('produk.index') }}" class="nav-link {{ request()->is('produk*') ? 'active' : '' }}">
-                    <i class="fa fa-box-open"></i> Kelola Produk
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('pesanan.index') }}" class="nav-link {{ request()->is('pesanan*') ? 'active' : '' }}">
-                    <i class="fa fa-inbox"></i> Pesanan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('users*') ? 'active' : '' }}">
-                    <i class="fa fa-users"></i> Pengguna
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('logout') }}" class="nav-link">
-                    <i class="fa fa-sign-out-alt"></i> Keluar
-                </a>
-            </li>
-        </ul>
-    </div>
+    <main class="relative h-full max-h-screen transition-all duration-200 ease-in-out xl:ml-68 rounded-xl">
+        
+        @include('layout.partials._navbar')
 
-    <!-- Page Content -->
-    <div id="page-content-wrapper" class="flex-grow-1">
-        <!-- Topbar -->
-        <nav class="navbar navbar-expand navbar-light shadow-sm px-4">
-            <div class="container-fluid">
-                <span class="navbar-brand fw-bold">Marketplace BANGKIT Admin</span>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <span class="nav-link text-muted">
-                            <i class="fa fa-user-circle me-1"></i> {{ Auth::user()->name }}
-                        </span>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="content-wrapper">
-            <div class="container-fluid">
-                <h4 class="mb-4">@yield('title')</h4>
-                @yield('content')
-            </div>
-        </main>
-    </div>
-</div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+        <div class="w-full px-6 py-6 mx-auto">
+            @yield('content')
+            
+            <footer class="pt-4">
+              <div class="w-full px-6 mx-auto">
+                <div class="flex flex-wrap items-center -mx-3 lg:justify-between">
+                  <div class="w-full max-w-full px-3 mt-0 mb-6 shrink-0 lg:mb-0 lg:w-1/2 lg:flex-none">
+                    <div class="text-sm leading-normal text-center text-slate-500 lg:text-left">
+                      © <script> document.write(new Date().getFullYear()); </script>, Marketplace.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </footer>
+        </div>
+    </main>
+    
+    <script src="{{ asset('admin_assets/js/plugins/perfect-scrollbar.min.js') }}" async></script>
+    <script src="{{ asset('admin_assets/js/argon-dashboard-tailwind.js?v=1.0.1') }}" async></script>
+    @stack('scripts')
 </body>
 </html>

@@ -10,15 +10,19 @@ use App\Http\Controllers\Controller;
 class ProdukController extends Controller
 {
     public function index() {
-    if (Auth::check() && Auth::user()->role == 'penjual') {
-        // Hanya tampilkan produk milik penjual yang login
-        $produks = Produk::where('user_id', Auth::id())->get();
-    } else {
-        // Untuk admin/pembeli, tampilkan semua produk
-        $produks = Produk::all();
+        // --- LOGIKA INDEX DIPERBARUI ---
+        if (Auth::check() && Auth::user()->role == 'admin') {
+            // Admin bisa melihat semua produk, tanpa terkecuali
+            $produks = Produk::with('user')->get();
+        } else if (Auth::check() && Auth::user()->role == 'penjual') {
+            // Penjual hanya melihat produk miliknya sendiri, tanpa terkecuali status
+            $produks = Produk::where('user_id', Auth::id())->get();
+        } else {
+            // Pembeli dan tamu hanya bisa melihat produk yang SUDAH DISETUJUI
+            $produks = Produk::where('is_approved', true)->get();
+        }
+        return view('produk.index', compact('produks'));
     }
-    return view('produk.index', compact('produks'));
-}
 
     public function create() {
         return view('produk.create');
@@ -40,20 +44,29 @@ class ProdukController extends Controller
             $file->move(public_path('foto_produk'), $foto);
         }
 
+        // --- PENYESUAIAN SAAT MEMBUAT PRODUK ---
         Produk::create([
             'nama' => $request->nama,
             'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
             'user_id' => Auth::user()->id,
-            'foto' => $foto
+            'foto' => $foto,
+            'is_approved' => false // Setiap produk baru statusnya menunggu persetujuan
         ]);
 
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan.');
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan dan sedang menunggu persetujuan admin.');
     }
 
+    // ... (fungsi show, edit, update, destroy tidak perlu diubah)
     public function show($id) {
         $produk = Produk::with('reviews.user')->findOrFail($id);
+        
+        // Tambahan: Cegah pembeli melihat detail produk yang belum disetujui
+        if (!($produk->is_approved) && !(Auth::check() && in_array(Auth::user()->role, ['admin', 'penjual']))) {
+            abort(404);
+        }
+
         return view('produk.detail', compact('produk'));
     }
 
@@ -75,7 +88,6 @@ class ProdukController extends Controller
 
         $foto = $produk->foto;
         if ($request->hasFile('foto')) {
-            // Hapus foto lama jika ada
             if ($foto && file_exists(public_path('foto_produk/'.$foto))) {
                 unlink(public_path('foto_produk/'.$foto));
             }

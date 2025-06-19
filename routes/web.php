@@ -8,7 +8,6 @@ use App\Http\Controllers\TransaksiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KeranjangController;
-
 use App\Http\Controllers\Admin\UserApprovalController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -20,11 +19,6 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function() {
-    // Admin Approval Routes (moved inside auth middleware and added admin middleware)
-    
-        Route::get('/admin/approval', [UserApprovalController::class, 'index'])->name('admin.approval');
-        Route::post('/admin/approval/{id}/approve', [UserApprovalController::class, 'approve'])->name('admin.approval.approve');
-
     // Produk
     Route::get('/produk', [ProdukController::class, 'index'])->name('produk.index');
     Route::get('/produk/create', [ProdukController::class, 'create'])->name('produk.create');
@@ -67,4 +61,27 @@ Route::middleware(['auth'])->group(function() {
     Route::post('/profil/update', [App\Http\Controllers\ProfilController::class, 'update'])->name('profil.update');
 });
 
+Route::prefix('admin')->name('admin.')->group(function () {
+
+        // Fitur Persetujuan Penjual (yang sudah ada, dipindahkan ke sini)
+        Route::get('/approval', [App\Http\Controllers\Admin\UserApprovalController::class, 'index'])->name('approval');
+        Route::post('/approval/{id}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve'])->name('approval.approve');
+
+        // Dashboard Admin Baru
+        Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+
+        // Kelola User (CRUD)
+        Route::get('/users', [App\Http\Controllers\Admin\KelolaUserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [App\Http\Controllers\Admin\KelolaUserController::class, 'create'])->name('users.create');
+        Route::post('/users', [App\Http\Controllers\Admin\KelolaUserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\KelolaUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [App\Http\Controllers\Admin\KelolaUserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [App\Http\Controllers\Admin\KelolaUserController::class, 'destroy'])->name('users.destroy');
+
+        // Laporan Penjualan
+        Route::get('/laporan/penjualan', [App\Http\Controllers\Admin\LaporanController::class, 'penjualan'])->name('laporan.penjualan');
+
+        Route::get('/produk/approval', [App\Http\Controllers\Admin\ProdukApprovalController::class, 'index'])->name('produk.approval');
+        Route::post('/produk/approval/{produk}/approve', [App\Http\Controllers\Admin\ProdukApprovalController::class, 'approve'])->name('produk.approve');
+    });
 // Removed redundant define('REMOVE_RJAONGKIR_ROUTES', true); as it's just a comment and not a route itself.

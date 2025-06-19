@@ -11,13 +11,24 @@ class HomeController extends Controller
 {
     public function index()
     {
+        // Menggunakan with() untuk Eager Loading relasi user & reviews
+        // Ini adalah cara terbaik untuk mencegah error dan membuat query lebih cepat
         if (Auth::check() && Auth::user()->role == 'penjual') {
-            // Hanya produk milik penjual yang login
-            $produks = Produk::where('user_id', Auth::id())->latest()->take(6)->get();
+            // Penjual melihat produknya sendiri
+            $produks = Produk::with(['user', 'reviews'])
+                            ->where('user_id', Auth::id())
+                            ->latest()
+                            ->take(8) // Kita tampilkan 8 produk
+                            ->get();
         } else {
-            // Untuk pembeli/tamu, tampilkan semua produk
-            $produks = Produk::latest()->take(6)->get();
+            // Pembeli & tamu hanya melihat produk yang SUDAH DISETUJUI
+            $produks = Produk::with(['user', 'reviews'])
+                            ->where('is_approved', true)
+                            ->latest()
+                            ->take(8)
+                            ->get();
         }
+        
         return view('landing', compact('produks'));
     }
 }

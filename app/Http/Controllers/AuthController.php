@@ -15,38 +15,39 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-  public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-    if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-        $user = Auth::user();
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+            $user = Auth::user();
 
-        // Cek apakah penjual sudah disetujui
-        if ($user->role === 'penjual' && !$user->is_approved) {
-            Auth::logout();
-            return redirect()->route('login')->withErrors([
-                'email' => 'Akun Anda belum disetujui oleh admin.',
+            // Cek apakah penjual sudah disetujui
+            if ($user->role === 'penjual' && !$user->is_approved) {
+                Auth::logout();
+                return redirect()->route('login')->withErrors([
+                    'email' => 'Akun Anda belum disetujui oleh admin.',
+                ]);
+            }
+
+           if ($user->role === 'admin') {
+                // DIUBAH: Mengarahkan ke dashboard admin baru
+                return redirect()->route('admin.dashboard')->with('success', 'Selamat datang, Admin!');
+            } elseif ($user->role === 'penjual') {
+                return redirect()->route('home')->with('success', 'Berhasil login!');
+            } else {
+                return redirect()->route('home')->with('success', 'Berhasil login!');
+            }
+
+        } else {
+            return back()->withErrors([
+                'email' => 'Email atau password salah!',
             ]);
         }
-
-       if ($user->role === 'admin') {
-    return redirect()->route('admin.approval')->with('success', 'Selamat datang, Admin!');
-} elseif ($user->role === 'penjual') {
-    return redirect()->route('home')->with('success', 'Berhasil login!');
-} else {
-    return redirect()->route('home')->with('success', 'Berhasil login!');
-}
-
-    } else {
-        return back()->withErrors([
-            'email' => 'Email atau password salah!',
-        ]);
     }
-}
 
 
     public function showRegister() {

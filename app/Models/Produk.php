@@ -9,9 +9,14 @@ class Produk extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'user_id', 'foto'];
+    // TAMBAHKAN 'is_approved' DI SINI
+    protected $fillable = ['nama', 'deskripsi', 'harga', 'stok', 'user_id', 'foto', 'is_approved'];
 
-    // Relasi: Produk dimiliki oleh User (penjual)
+    // TAMBAHKAN INI UNTUK MEMASTIKAN TIPE DATA BENAR
+    protected $casts = [
+        'is_approved' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
