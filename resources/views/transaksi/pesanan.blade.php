@@ -1,80 +1,112 @@
 @extends('layout.public')
-@section('title', 'Riwayat Transaksi')
+@section('title', 'Pesanan Masuk')
 
 @section('content')
-<h2 class="mb-4 fw-bold text-center border-bottom pb-2">Riwayat Transaksi Saya</h2>
+<div class="container py-5">
+    <h2 class="mb-4 fw-bold text-center">Pesanan Masuk</h2>
+    
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">{{ $errors->first() }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    @endif
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-    {{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
-
-<div class="row g-4">
-@forelse($pesanans as $trx)
-    <div class="col-md-6">
-        <div class="card shadow border-0 rounded-4 mb-3 h-100">
-            <div class="card-body d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="fw-bold mb-0">#{{ $trx->id }}</h5>
-                    <span class="badge 
-                        {{ $trx->status == 'selesai' ? 'bg-success' : 
-                           ($trx->status == 'dikirim' ? 'bg-info' : 
-                           ($trx->status == 'diproses' ? 'bg-warning text-dark' : 'bg-secondary')) }}">
-                        {{ ucfirst($trx->status) }}
-                    </span>
-                </div>
-                <div class="mb-2 text-muted" style="font-size:0.95rem;">
-                    <i class="fa fa-calendar-alt me-1"></i> {{ $trx->created_at->format('d/m/Y H:i') }}
-                </div>
-                <ul class="mb-3 ps-3">
-                    @foreach($trx->details as $detail)
-                        <li>
-                            <span class="fw-semibold">{{ $detail->produk->nama }}</span>
-                            <span class="badge bg-primary ms-1">x{{ $detail->jumlah }}</span>
-                            <span class="text-muted ms-2">Rp {{ number_format($detail->harga,0,',','.') }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-                <div class="d-flex justify-content-between align-items-center mt-auto">
-                    <span class="fw-bold fs-6 text-success">Total: Rp {{ number_format($trx->total_harga,0,',','.') }}</span>
-                    <div class="d-flex gap-2 flex-wrap">
-                        @if(in_array($trx->status, ['dikirim', 'selesai']))
-                            <a class="btn btn-success btn-sm rounded-pill px-3" href="{{ route('transaksi.invoice', $trx->id) }}">
-                                <i class="fa fa-file-pdf"></i> Invoice
-                            </a>
-                        @endif
-                        @if($trx->status == 'selesai' && Auth::id() == $trx->user_id)
-                            <a class="btn btn-warning btn-sm rounded-pill px-3" href="{{ route('review.create', $trx->id) }}">
-                                <i class="fa fa-star"></i> Ulasan
-                            </a>
-                        @endif
-                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" href="{{ route('transaksi.show', $trx->id) }}">
-                            <i class="fa fa-eye"></i> Detail
-                        </a>
-                        @if(Auth::user() && (Auth::user()->role == 'admin' || Auth::user()->role == 'penjual') && $trx->status != 'selesai')
-                        <form action="{{ route('pesanan.updateStatus', $trx->id) }}" method="POST" class="d-inline-block ms-2">
-                            @csrf
-                            <select name="status" class="form-select form-select-sm d-inline w-auto" style="min-width:120px;display:inline-block;" onchange="this.form.submit()">
-                                <option value="menunggu pembayaran" @if($trx->status=='menunggu pembayaran') selected @endif>Menunggu</option>
-                                <option value="diproses" @if($trx->status=='diproses') selected @endif>Diproses</option>
-                                <option value="dikirim" @if($trx->status=='dikirim') selected @endif>Dikirim</option>
-                                <option value="selesai" @if($trx->status=='selesai') selected @endif>Selesai</option>
-                            </select>
-                        </form>
-                        @endif
-                    </div>
-                </div>
+    {{-- =============================================== --}}
+    {{-- ==== TAMPILAN DESKTOP (TABLE) - LG ke atas ==== --}}
+    {{-- =============================================== --}}
+    <div class="card shadow-sm border-0 rounded-4 d-none d-lg-block">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Pembeli</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th class="text-center" style="width: 200px;">Ubah Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($pesanans as $trx)
+                        <tr>
+                            <td class="fw-medium">#{{ $trx->id }}</td>
+                            <td>{{ $trx->user->nama }}</td>
+                            <td class="fw-medium">Rp {{ number_format($trx->total_harga,0,',','.') }}</td>
+                            <td><span class="badge text-capitalize @switch($trx->status)
+                                @case('selesai') bg-success-subtle text-success-emphasis @break
+                                @case('dikirim') bg-info-subtle text-info-emphasis @break
+                                @case('diproses') bg-warning-subtle text-warning-emphasis @break
+                                @default bg-secondary-subtle text-secondary-emphasis
+                            @endswitch">{{ str_replace('_', ' ', $trx->status) }}</span></td>
+                            <td>
+                                <form action="{{ route('pesanan.updateStatus', $trx->id) }}" method="POST">
+                                    @csrf
+                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="menunggu pembayaran" @if($trx->status=='menunggu pembayaran') selected @endif>Menunggu Pembayaran</option>
+                                        <option value="diproses" @if($trx->status=='diproses') selected @endif>Diproses</option>
+                                        <option value="dikirim" @if($trx->status=='dikirim') selected @endif>Dikirim</option>
+                                        <option value="selesai" @if($trx->status=='selesai') selected @endif>Selesai</option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ route('transaksi.show', $trx->id) }}" class="btn btn-sm btn-outline-primary rounded-circle" title="Lihat Detail"><i class="fa fa-eye"></i></a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="text-center py-4">Belum ada pesanan yang masuk.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-@empty
-    <div class="col-12">
-        <div class="alert alert-info text-center shadow-sm rounded-4">
-            Belum ada transaksi.
-        </div>
+
+    {{-- =============================================== --}}
+    {{-- ==== TAMPILAN MOBILE (CARD) - MD ke bawah ===== --}}
+    {{-- =============================================== --}}
+    <div class="d-block d-lg-none">
+        @forelse($pesanans as $trx)
+            <div class="card shadow-sm border-0 rounded-4 mb-3">
+                <div class="card-header bg-white p-3 border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Pesanan #{{ $trx->id }}</h6>
+                    <span class="badge text-capitalize @switch($trx->status)
+                        @case('selesai') bg-success-subtle text-success-emphasis @break
+                        @case('dikirim') bg-info-subtle text-info-emphasis @break
+                        @case('diproses') bg-warning-subtle text-warning-emphasis @break
+                        @default bg-secondary-subtle text-secondary-emphasis
+                    @endswitch">{{ str_replace('_', ' ', $trx->status) }}</span>
+                </div>
+                <div class="card-body p-3">
+                    <p class="mb-1"><strong class="text-muted">Pembeli:</strong> {{ $trx->user->nama }}</p>
+                    <p class="mb-2"><strong class="text-muted">Total:</strong> <span class="fw-bold text-primary">Rp {{ number_format($trx->total_harga,0,',','.') }}</span></p>
+                     <small class="text-muted"><i class="fa fa-calendar-alt me-1"></i> {{ $trx->created_at->format('d M Y') }}</small>
+                </div>
+                <div class="card-footer bg-white p-3 border-0">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-8">
+                            <form action="{{ route('pesanan.updateStatus', $trx->id) }}" method="POST">
+                                @csrf
+                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option>Ubah Status</option>
+                                    <option value="diproses">Diproses</option>
+                                    <option value="dikirim">Dikirim</option>
+                                    <option value="selesai">Selesai</option>
+                                </select>
+                            </form>
+                        </div>
+                        <div class="col-4 d-grid">
+                             <a href="{{ route('transaksi.show', $trx->id) }}" class="btn btn-sm btn-outline-primary rounded-pill">Detail</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="alert alert-light text-center py-4">Belum ada pesanan yang masuk.</div>
+        @endforelse
     </div>
-@endforelse
 </div>
 @endsection

@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/profil', [App\Http\Controllers\ProfilController::class, 'show'])->name('profil.show');
     Route::get('/profil/edit', [App\Http\Controllers\ProfilController::class, 'edit'])->name('profil.edit');
     Route::post('/profil/update', [App\Http\Controllers\ProfilController::class, 'update'])->name('profil.update');
+    Route::get('/toko/{id}', [App\Http\Controllers\TokoController::class, 'show'])->name('toko.show');
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
