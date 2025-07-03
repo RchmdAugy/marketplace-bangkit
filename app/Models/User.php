@@ -18,12 +18,14 @@ class User extends Authenticatable
         'nama',
         'email',
         'password',
-        'foto_profil',      // Ditambahkan
+        'foto_profil',
         'role',
         'is_approved',
-        'nama_toko',   // Ditambahkan
-        'no_telepon',   // Ditambahkan
-        'alamat_toko',  // Ditambahkan
+        'nama_toko',
+        'no_telepon',
+        'alamat_toko',
+        'nomor_lisensi',  // Tambahkan ini
+        'file_lisensi',   // Tambahkan ini
     ];
 
     /**

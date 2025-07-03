@@ -18,7 +18,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('register') }}">
+        <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
             @csrf
             <div class="mb-3">
                 <label for="nama" class="form-label fw-medium">Nama Lengkap</label>
@@ -32,16 +32,61 @@
                 <label for="password" class="form-label fw-medium">Kata Sandi</label>
                 <input type="password" name="password" id="password" class="form-control" required placeholder="Minimal 8 Karakter" minlength="8">
             </div>
-            <div class="mb-4">
+            <div class="mb-3">
                 <label for="role" class="form-label fw-medium">Saya ingin mendaftar sebagai:</label>
                 <select name="role" id="role" class="form-select" style="padding: 0.8rem 1rem;" required>
-                    <option value="pembeli">Pembeli</option>
-                    <option value="penjual">Penjual (UMKM)</option>
+                    <option value="pembeli" @if(old('role') == 'pembeli') selected @endif>Pembeli</option>
+                    <option value="penjual" @if(old('role') == 'penjual') selected @endif>Penjual (UMKM)</option>
                 </select>
             </div>
-            <div class="d-grid">
+
+            <div id="form-penjual-lanjutan" style="display: none;">
+                <hr class="my-4">
+                <h5 class="fw-semibold mb-3">Verifikasi Penjual</h5>
+                <p class="text-muted small">Untuk menjaga kualitas, kami memerlukan verifikasi lisensi usaha Anda (NIB, PIRT, Halal, dll).</p>
+                <div class="mb-3">
+                    <label for="nomor_lisensi" class="form-label fw-medium">Nomor Lisensi Usaha</label>
+                    <input type="text" name="nomor_lisensi" id="nomor_lisensi" class="form-control" value="{{ old('nomor_lisensi') }}" placeholder="Masukkan nomor lisensi Anda">
+                </div>
+                <div class="mb-4">
+                    <label for="file_lisensi" class="form-label fw-medium">Unggah Dokumen Lisensi</label>
+                    <input type="file" name="file_lisensi" id="file_lisensi" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <div class="form-text">File dapat berupa PDF, JPG, atau PNG (Maksimal 2MB).</div>
+                </div>
+            </div>
+            
+            <div class="d-grid mt-4">
                 <button class="btn btn-primary w-100 fw-bold py-2" type="submit"><i class="fa fa-user-plus me-2"></i> Daftar Akun</button>
             </div>
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const formPenjual = document.getElementById('form-penjual-lanjutan');
+    const inputLisensi = document.getElementById('nomor_lisensi');
+    const inputFile = document.getElementById('file_lisensi');
+
+    function toggleFormPenjual() {
+        if (roleSelect.value === 'penjual') {
+            formPenjual.style.display = 'block';
+            inputLisensi.required = true;
+            inputFile.required = true;
+        } else {
+            formPenjual.style.display = 'none';
+            inputLisensi.required = false;
+            inputFile.required = false;
+        }
+    }
+
+    // Panggil saat halaman dimuat untuk memeriksa nilai awal (jika ada old value)
+    toggleFormPenjual();
+
+    // Panggil setiap kali pilihan berubah
+    roleSelect.addEventListener('change', toggleFormPenjual);
+});
+</script>
+@endpush

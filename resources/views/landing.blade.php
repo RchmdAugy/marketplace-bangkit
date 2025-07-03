@@ -7,9 +7,9 @@
 <div class="container mt-4 mb-5">
     <div class="swiper hero-slider" style="border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
         <div class="swiper-wrapper">
-            <div class="swiper-slide slide-theme-food" style="background: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.1)), url('https://img.freepik.com/free-photo/crispy-potato-chips-with-tomato-sauce-snack-concept_1150-23579.jpg?ga=GA1.1.1438699670.1732442037&semt=ais_hybrid&w=740'); background-size: cover; background-position: center;">
+            <div class="swiper-slide slide-theme-food" style="background: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.1)), url('{{ asset('images/foto_landing.webp') }}'); background-size: cover; background-position: center;">
                 <div class="slide-content">
-                    <h1 class="mb-3">Renyahnya Jajanan Nusantara</h1>
+                    <h1 class="mb-3">Renyahnya Jajanan Khas Subang</h1>
                     <p class="mb-4">Keripik, kue kering, dan aneka camilan langsung dari dapurnya.</p>
                     <a href="{{ route('produk.index') }}" class="btn slide-button rounded-pill">
                         <i class="fa fa-shopping-bag me-2"></i>Belanja Sekarang
@@ -39,7 +39,7 @@
         <h2 class="mb-4 fw-bold text-center">Produk dari UMKM Pilihan</h2>
         <div class="row g-4">
             @foreach($produks as $produk)
-            <div class="col-md-4 col-lg-3">
+            <div class="col-6 col-md-4 col-lg-3">
                 <div class="card h-100 shadow-sm border-0 rounded-4">
                     @if($produk->foto)
                     <img src="{{ asset('foto_produk/'.$produk->foto) }}" alt="{{ $produk->nama }}" class="card-img-top rounded-top-4" style="object-fit:cover; height:200px;">
@@ -48,7 +48,7 @@
                     @endif
                     <div class="card-body d-flex flex-column p-3">
                         <h5 class="card-title fw-semibold text-dark" style="font-size: 1rem;"><a href="{{ route('produk.show', $produk->id) }}" class="text-decoration-none text-dark stretched-link">{{ Str::limit($produk->nama, 45) }}</a></h5>
-                        <p class="small text-muted mb-2"><i class="fa fa-store me-1"></i> {{ $produk->user->nama ?? 'Penjual' }}</p>
+                        <p class="small text-muted mb-2"><i class="fa fa-store me-1"></i> {{ $produk->user->nama_toko ?? $produk->user->nama }}</p>
                         <p class="fw-bold fs-5 text-primary mt-auto">Rp {{ number_format($produk->harga,0,',','.') }}</p>
                     </div>
                 </div>

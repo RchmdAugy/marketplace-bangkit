@@ -40,7 +40,7 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => public_path('storage'), // <-- UBAH MENJADI INI
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,

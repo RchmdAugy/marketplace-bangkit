@@ -54,31 +54,54 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-public function register(Request $request)
-{
-    $request->validate([
-        'nama' => 'required',
-        'email' => 'required|email|unique:users',
-        'password' => 'required|min:5',
-        'role' => 'required',
-    ]);
+    public function register(Request $request)
+    {
+        // Aturan validasi dasar
+        $rules = [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:8',
+            'role' => 'required|in:pembeli,penjual',
+        ];
 
-    // Jika role penjual, set is_approved = 0, selain itu 1
-    $isApproved = $request->role === 'penjual' ? 0 : 1;
+        // Tambahkan aturan validasi kondisional untuk penjual
+        if ($request->role == 'penjual') {
+            $rules['nomor_lisensi'] = 'required|string|max:255';
+            $rules['file_lisensi'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
+        }
 
-    User::create([
-        'nama' => $request->nama,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'role' => $request->role,
-        'is_approved' => $isApproved,
-    ]);
+        $request->validate($rules);
 
-    return redirect()->route('login')->with('success', $request->role === 'penjual'
-        ? 'Registrasi berhasil. Akun Anda akan ditinjau oleh admin.'
-        : 'Registrasi berhasil. Silakan login.'
-    );
-}
+        // Siapkan data untuk dimasukkan ke database
+        $dataToCreate = [
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+            'is_approved' => $request->role === 'penjual' ? 0 : 1, // Penjual butuh approval
+        ];
+        
+        // Proses upload file lisensi jika rolenya penjual
+        if ($request->role == 'penjual') {
+            if ($request->hasFile('file_lisensi')) {
+                $file = $request->file('file_lisensi');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                // Simpan ke disk 'public', di dalam folder 'lisensi_penjual'
+                $file->storeAs('lisensi_penjual', $filename, 'public'); // <-- KODE BARU
+                
+                $dataToCreate['nomor_lisensi'] = $request->nomor_lisensi;
+                $dataToCreate['file_lisensi'] = $filename;
+            }
+        }
+
+        // Buat user baru
+        User::create($dataToCreate);
+
+        return redirect()->route('login')->with('success', $request->role === 'penjual'
+            ? 'Registrasi berhasil. Akun Anda akan ditinjau oleh admin.'
+            : 'Registrasi berhasil. Silakan login.'
+        );
+    }
 
 
 
