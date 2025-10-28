@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\Admin\UserApprovalController;
+use App\Http\Controllers\Admin\SliderController;
+use App\Http\Controllers\Admin\CategoryController; // <-- TAMBAHKAN INI
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -16,17 +18,25 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
-Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function() {
     // Produk
     Route::get('/produk', [ProdukController::class, 'index'])->name('produk.index');
     Route::get('/produk/create', [ProdukController::class, 'create'])->name('produk.create');
-    Route::post('/produk/store', [ProdukController::class, 'store'])->name('produk.store');
+    Route::post('/produk', [ProdukController::class, 'store'])->name('produk.store'); // URL lebih baik tanpa /store
     Route::get('/produk/{id}', [ProdukController::class, 'show'])->name('produk.show');
     Route::get('/produk/{id}/edit', [ProdukController::class, 'edit'])->name('produk.edit');
-    Route::post('/produk/{id}/update', [ProdukController::class, 'update'])->name('produk.update');
-    Route::get('/produk/{id}/delete', [ProdukController::class, 'destroy'])->name('produk.delete');
+
+    // --- PERBAIKAN DI SINI ---
+    // Gunakan PUT untuk update dan hapus '/update' dari URL
+    Route::put('/produk/{id}', [ProdukController::class, 'update'])->name('produk.update');
+
+    // Gunakan DELETE untuk destroy, hapus '/delete', dan ganti nama route ke 'destroy'
+    Route::delete('/produk/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
+
+    // Filter produk berdasarkan kategori
+    Route::get('/produk/kategori/{category:slug}', [ProdukController::class, 'index'])->name('produk.by_category');
 
     // Transaksi Pembeli
     Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi.index');
@@ -43,7 +53,7 @@ Route::middleware(['auth'])->group(function() {
 
     // Review
     Route::get('/review/{transaksi_id}/create', [ReviewController::class, 'create'])->name('review.create');
-    Route::post('/review/{transaksi_id}/store', [ReviewController::class, 'store'])->name('review.store');
+    Route::post('/review/{transaksi}/store', [App\Http\Controllers\ReviewController::class, 'store'])->name('review.store');
 
     // Dashboard (corrected to statistik method)
     Route::get('/dashboard', [DashboardController::class, 'statistik'])->name('dashboard');
@@ -52,13 +62,13 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
     Route::post('/keranjang/{produk_id}/add', [KeranjangController::class, 'add'])->name('keranjang.add');
     Route::post('/keranjang/{id}/update', [KeranjangController::class, 'update'])->name('keranjang.update');
-    Route::get('/keranjang/{id}/remove', [KeranjangController::class, 'remove'])->name('keranjang.remove');
+    Route::delete('/keranjang/{id}/remove', [KeranjangController::class, 'remove'])->name('keranjang.remove');
     Route::post('/keranjang/checkout', [TransaksiController::class, 'checkoutKeranjang'])->name('keranjang.checkout');
 
     // Profil
     Route::get('/profil', [App\Http\Controllers\ProfilController::class, 'show'])->name('profil.show');
     Route::get('/profil/edit', [App\Http\Controllers\ProfilController::class, 'edit'])->name('profil.edit');
-    Route::post('/profil/update', [App\Http\Controllers\ProfilController::class, 'update'])->name('profil.update');
+    Route::put('/profil/update', [App\Http\Controllers\ProfilController::class, 'update'])->name('profil.update');
     Route::get('/toko/{id}', [App\Http\Controllers\TokoController::class, 'show'])->name('toko.show');
 });
 
@@ -67,6 +77,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Fitur Persetujuan Penjual (yang sudah ada, dipindahkan ke sini)
         Route::get('/approval', [App\Http\Controllers\Admin\UserApprovalController::class, 'index'])->name('approval');
         Route::post('/approval/{id}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve'])->name('approval.approve');
+
+        // CRUD Slider Baru
+        Route::resource('sliders', SliderController::class);
+
+        // CRUD Kategori Baru
+        Route::resource('categories', CategoryController::class)->except(['show']); // Kita tidak butuh halaman 'show'
 
         // Dashboard Admin Baru
         Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');

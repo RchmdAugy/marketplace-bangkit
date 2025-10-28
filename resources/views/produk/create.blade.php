@@ -8,43 +8,71 @@
             <div class="card shadow-lg border-0 rounded-4">
                 <div class="card-body p-4 p-lg-5">
                     <h2 class="fw-bold text-center mb-4">Tambah Produk Baru</h2>
-                    <p class="text-center text-muted mb-4">Produk Anda akan ditinjau oleh Admin sebelum ditampilkan di marketplace.</p>
+                    <p class="text-center text-muted mb-4">Produk Anda akan ditinjau oleh Admin sebelum ditampilkan.</p>
                     <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        {{-- Nama, Deskripsi --}}
                         <div class="mb-3">
                             <label for="nama" class="form-label fw-medium">Nama Produk</label>
-                            <input type="text" name="nama" id="nama" class="form-control" required placeholder="Contoh: Keripik Singkong Balado">
+                            <input type="text" name="nama" id="nama" class="form-control @error('nama') is-invalid @enderror" required placeholder="Contoh: Keripik Singkong Balado" value="{{ old('nama') }}">
+                            @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="mb-3">
                             <label for="deskripsi" class="form-label fw-medium">Deskripsi</label>
-                            <textarea name="deskripsi" id="deskripsi" class="form-control" rows="5" required placeholder="Jelaskan keunikan produk Anda..."></textarea>
+                            <textarea name="deskripsi" id="deskripsi" class="form-control @error('deskripsi') is-invalid @enderror" rows="5" required placeholder="Jelaskan keunikan produk Anda...">{{ old('deskripsi') }}</textarea>
+                            @error('deskripsi') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+
+                        {{-- ========================================= --}}
+                        {{-- ==     DROPDOWN KATEGORI (BARU)        == --}}
+                        {{-- ========================================= --}}
+                        <div class="mb-3">
+                             <label for="category_id" class="form-label fw-medium">Kategori Produk</label>
+                             <select name="category_id" id="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
+                                 <option value="" disabled selected>-- Pilih Kategori --</option>
+                                 @foreach($categories as $category)
+                                     <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                         {{ $category->name }}
+                                     </option>
+                                 @endforeach
+                             </select>
+                             @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        {{-- ========================================= --}}
+
+
+                        {{-- Harga, Stok --}}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="harga" class="form-label fw-medium">Harga (Rp)</label>
-                                <input type="number" name="harga" id="harga" class="form-control" required placeholder="Contoh: 15000">
+                                <input type="number" name="harga" id="harga" class="form-control @error('harga') is-invalid @enderror" required placeholder="Contoh: 15000" value="{{ old('harga') }}" min="0">
+                                @error('harga') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="stok" class="form-label fw-medium">Stok</label>
-                                <input type="number" name="stok" id="stok" class="form-control" required placeholder="Jumlah stok tersedia">
+                                <input type="number" name="stok" id="stok" class="form-control @error('stok') is-invalid @enderror" required placeholder="Jumlah stok tersedia" value="{{ old('stok') }}" min="0">
+                                @error('stok') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        <div class="mb-4">
-                            <label for="foto" class="form-label fw-medium">Foto Produk</label>
-                            <input type="file" name="foto" id="foto" class="form-control" accept="image/*" onchange="previewImage()">
-                            <img id="image-preview" class="mt-3 rounded-3" style="max-height: 200px; display: none;">
-                        </div>
-                        
-                        @if($errors->any())
-                            <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                                </ul>
-                            </div>
-                        @endif
 
+                        {{-- Input Foto Utama --}}
+                        <div class="mb-3">
+                            <label for="foto" class="form-label fw-medium">Foto Utama Produk</label>
+                            <input type="file" name="foto" id="foto" class="form-control @error('foto') is-invalid @enderror" accept="image/*" onchange="previewImage(this, 'image-preview-main')">
+                             @error('foto') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                            <img id="image-preview-main" class="mt-3 rounded-3 border p-1" style="max-height: 200px; display: none;">
+                        </div>
+
+                        {{-- Input Galeri Foto --}}
+                        <div class="mb-4">
+                             <label for="gallery_images" class="form-label fw-medium">Foto Galeri Tambahan (Opsional)</label>
+                            <input type="file" name="gallery_images[]" id="gallery_images" class="form-control @error('gallery_images.*') is-invalid @enderror" accept="image/*" multiple onchange="previewGalleryImages(this, 'gallery-preview')">
+                            @error('gallery_images.*') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                            <small class="text-muted">Anda bisa memilih lebih dari satu gambar.</small>
+                            <div id="gallery-preview" class="mt-3 d-flex flex-wrap gap-2"></div>
+                        </div>
+
+                        {{-- Tombol --}}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a class="btn btn-outline-secondary rounded-pill px-4" href="{{ route('produk.index') }}">Batal</a>
                             <button class="btn btn-primary rounded-pill px-5 py-2" type="submit"><i class="fa fa-save me-2"></i>Simpan Produk</button>
@@ -58,16 +86,81 @@
 @endsection
 
 @push('scripts')
+{{-- Library SweetAlert --}}
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
 <script>
-    function previewImage() {
-        const image = document.querySelector('#foto');
-        const imgPreview = document.querySelector('#image-preview');
-        imgPreview.style.display = 'block';
-        const oFReader = new FileReader();
-        oFReader.readAsDataURL(image.files[0]);
-        oFReader.onload = function(oFREvent) {
-            imgPreview.src = oFREvent.target.result;
+    // Fungsi preview untuk SATU gambar (Foto Utama)
+    function previewImage(input, previewId) {
+        const imgPreview = document.getElementById(previewId);
+        if (input.files && input.files[0]) {
+            imgPreview.style.display = 'block';
+            const oFReader = new FileReader();
+            oFReader.readAsDataURL(input.files[0]);
+            oFReader.onload = function(oFREvent) {
+                imgPreview.src = oFREvent.target.result;
+            }
+        } else {
+             imgPreview.style.display = 'none';
+             imgPreview.src = '';
         }
     }
+
+    // Fungsi preview untuk BANYAK gambar (Galeri)
+    function previewGalleryImages(input, previewContainerId) {
+        const previewContainer = document.getElementById(previewContainerId);
+        previewContainer.innerHTML = ''; // Kosongkan preview lama
+        if (input.files && input.files.length > 0) {
+            // Batasi jumlah preview jika terlalu banyak (opsional)
+            const maxPreview = 10; 
+            const filesToPreview = Math.min(input.files.length, maxPreview);
+
+            for (let i = 0; i < filesToPreview; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.classList.add('position-relative'); // Untuk tombol hapus nanti (jika perlu)
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxHeight = '100px'; // Ukuran preview kecil
+                    img.classList.add('rounded-3', 'border', 'p-1', 'mb-1'); // Tambah margin bottom
+                    
+                    imgWrapper.appendChild(img);
+                    previewContainer.appendChild(imgWrapper);
+                }
+                reader.readAsDataURL(input.files[i]);
+            }
+             // Beri tahu jika file > maxPreview
+            if (input.files.length > maxPreview) {
+                 const infoText = document.createElement('small');
+                 infoText.classList.add('text-muted', 'd-block', 'w-100', 'mt-1');
+                 infoText.textContent = `Hanya ${maxPreview} dari ${input.files.length} gambar ditampilkan sebagai preview.`;
+                 previewContainer.appendChild(infoText);
+            }
+        }
+    }
+
+    // Script SweetAlert 
+    @if(session('success'))
+        swal({ 
+            title: "Berhasil!", 
+            text: "{{ session('success') }}", 
+            icon: "success", 
+            button: "OK", 
+        });
+    @endif
+    @if ($errors->any())
+        let errorMessages = '';
+        @foreach ($errors->all() as $error) 
+            errorMessages += "- {{ $error }}\n"; // Tambah bullet point
+        @endforeach
+        swal({ 
+            title: "Oops, Gagal!", 
+            text: errorMessages, 
+            icon: "error", 
+            button: "Coba Lagi", 
+        });
+    @endif
 </script>
 @endpush

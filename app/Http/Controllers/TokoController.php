@@ -18,9 +18,13 @@ class TokoController extends Controller
 
         // Ambil semua produk dari penjual tersebut yang sudah disetujui (approved)
         $produks = Produk::where('user_id', $penjual->id)
-                        ->where('is_approved', true)
-                        ->latest()
-                        ->get();
+                         ->where('is_approved', true)
+                         // ===================================
+                         // ==  EAGER LOAD KATEGORI DI SINI  ==
+                         // ===================================
+                         ->with(['category', 'user', 'reviews']) // Memuat relasi category, user, dan reviews
+                         ->latest()
+                         ->get();
 
         // Kirim data penjual dan produknya ke view
         return view('toko.show', compact('penjual', 'produks'));

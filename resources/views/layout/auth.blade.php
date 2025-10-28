@@ -16,6 +16,10 @@
             --secondary-color: #475569; /* Slate-600 */
             --light-bg-color: #F8FAFC; /* Slate-50 */
             --border-color: #E2E8F0; /* Slate-200 */
+            /* Warna untuk gradien background */
+            --gradient-green: #10B981; /* Hijau cerah */
+            --gradient-yellow: #FACC15; /* Kuning terang */
+            --gradient-blue: #3B82F6; /* Biru cerah */
         }
         body {
             font-family: 'Poppins', sans-serif;
@@ -40,30 +44,65 @@
             overflow: hidden;
         }
         .auth-showcase {
-            background-image: url('https://images.pexels.com/photos/39284/macbook-apple-imac-computer-39284.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
-            background-size: cover;
-            background-position: center;
+            /* Perubahan utama di sini: Menggunakan linear-gradient */
+            background: linear-gradient(
+                135deg, /* Arah gradien */
+                var(--gradient-green) 0%, /* Hijau di awal */
+                var(--gradient-yellow) 50%, /* Kuning di tengah */
+                var(--gradient-blue) 100% /* Biru di akhir */
+            );
+            
             position: relative;
             color: #fff;
             display: flex;
             flex-direction: column;
             justify-content: flex-end; /* Teks di bagian bawah */
             padding: 3rem;
+            align-items: flex-start; /* Mengatur item ke kiri */
         }
+        /* Overlay ::before mungkin tidak diperlukan lagi, atau bisa disesuaikan */
         .auth-showcase::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(to top, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.7) 100%); /* Overlay warna primer */
+            /* Tambahkan overlay sangat ringan untuk kontras teks jika diperlukan */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+            /* Atau hapus blok ini jika teks sudah cukup terbaca */
         }
         .auth-showcase > * {
             position: relative;
             z-index: 2;
         }
+        .auth-showcase .logo-container {
+            position: absolute;
+            top: 3rem;
+            left: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .auth-showcase .logo-container .fa-store {
+            font-size: 1.5rem;
+        }
+        .auth-showcase .logo-container span {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
         .auth-showcase h2 {
             font-weight: 700;
             font-size: 2.5rem;
+            line-height: 1.2;
+            margin-bottom: 1rem;
         }
+        .auth-showcase p {
+            font-size: 1rem;
+            line-height: 1.5;
+            max-width: 85%;
+            color: rgba(255, 255, 255, 0.85); /* Agar teks deskripsi sedikit transparan */
+        }
+
         .auth-form-container {
             padding: 2rem 3rem;
             display: flex;
@@ -110,13 +149,13 @@
 <div class="auth-wrapper">
     <div class="auth-card">
         <div class="col-md-5 d-none d-md-flex auth-showcase">
+            <div class="logo-container text-white">
+                <i class="fa fa-store"></i>
+                <span>BANGKIT</span>
+            </div>
             <div>
-                <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-4 mb-4 text-white" href="{{ route('home') }}">
-                    <i class="fa fa-store fa-lg"></i>
-                    <span style="letter-spacing:1px;">BANGKIT</span>
-                </a>
                 <h2 class="mb-3">@yield('showcase-title', 'Mulai Petualangan Belanja Anda')</h2>
-                <p class="text-white-50">Dukung UMKM lokal dan temukan produk unik berkualitas langsung dari pembuatnya.</p>
+                <p>Dukung UMKM lokal dan temukan produk unik berkualitas langsung dari pembuatnya.</p>
             </div>
         </div>
         

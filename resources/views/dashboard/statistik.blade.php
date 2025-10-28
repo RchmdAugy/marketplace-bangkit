@@ -3,12 +3,18 @@
 
 @section('content')
 <div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0">Dashboard {{ Auth::user()->role == 'admin' ? 'Admin' : 'Penjual' }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-2"> {{-- Margin bottom dikurangi --}}
+        <h2 class="fw-bold mb-0 text-secondary">Dashboard {{ Auth::user()->role == 'admin' ? 'Admin' : 'Penjual' }}</h2>
         @if(Auth::user()->role == 'penjual')
         <a href="{{ route('produk.create') }}" class="btn btn-primary rounded-pill px-4"><i class="fa fa-plus me-2"></i>Tambah Produk</a>
         @endif
     </div>
+
+    {{-- =================================== --}}
+    {{-- ==    PESAN SELAMAT DATANG (BARU) == --}}
+    {{-- =================================== --}}
+    <p class="text-muted fs-5 mb-4">Selamat datang kembali, {{ Auth::user()->nama }}! 👋</p>
+
 
     <div class="row g-4 mb-5">
         {{-- (Kartu-kartu statistik dari jawaban sebelumnya tidak berubah, kodenya sudah benar) --}}
@@ -30,9 +36,10 @@
 
     <div class="row g-4">
         <div class="{{ isset($status_data) ? 'col-lg-8' : 'col-lg-12' }}">
-            <div class="card shadow-sm border-0 rounded-4">
+            {{-- Menambahkan h-100 agar tinggi kartu sama --}}
+            <div class="card shadow-sm border-0 rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Grafik Transaksi per Bulan</h5>
+                    <h5 class="fw-bold mb-3 text-secondary">Grafik Transaksi per Bulan</h5>
                     <div class="position-relative" style="height:300px;">
                         <canvas id="chartTransaksi"></canvas>
                     </div>
@@ -42,9 +49,10 @@
 
         @if(isset($status_data))
         <div class="col-lg-4">
-            <div class="card shadow-sm border-0 rounded-4">
+            {{-- Menambahkan h-100 agar tinggi kartu sama --}}
+            <div class="card shadow-sm border-0 rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Status Transaksi</h5>
+                    <h5 class="fw-bold mb-3 text-secondary">Status Transaksi</h5>
                     <div class="position-relative" style="height:300px;">
                         <canvas id="chartStatus"></canvas>
                     </div>
@@ -57,6 +65,7 @@
 @endsection
 
 @push('scripts')
+{{-- Script Anda sudah bagus dan tidak perlu diubah --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -74,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Jumlah Transaksi',
                     data: dataTransaksi,
-                    borderColor: '#10B981',
+                    borderColor: '#10B981', // Warna primary Anda
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     tension: 0.3,
                     fill: true
@@ -85,9 +94,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ================================================================
-    // SCRIPT UNTUK DOUGHNUT CHART (STATUS) - LOGIKA DIPERBAIKI
+    // SCRIPT UNTUK DOUGHNUT CHART (STATUS)
     // ================================================================
-    // Hanya akan berjalan jika elemen canvas 'chartStatus' benar-benar ada di halaman
     const ctxStatus = document.getElementById('chartStatus');
     if (ctxStatus) {
         @if(isset($status_data))
@@ -103,7 +111,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     labels: ['Menunggu Pembayaran', 'Diproses', 'Dikirim', 'Selesai'],
                     datasets: [{
                         data: dataStatus,
-                        backgroundColor: ['#6c757d', '#ffc107', '#17a2b8', '#10B981'],
+                        backgroundColor: [
+                            '#6c757d', // Abu-abu (secondary)
+                            '#ffc107', // Kuning (warning)
+                            '#0dcaf0', // Biru muda (info) - Disesuaikan agar lebih cerah
+                            '#10B981'  // Hijau (primary)
+                        ],
                         borderWidth: 2
                     }]
                 },

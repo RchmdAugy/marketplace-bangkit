@@ -1,0 +1,23 @@
+<?php
+// File: app/Models/Category.php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Category extends Model
+{
+    use HasFactory;
+
+    protected $fillable = ['name', 'slug'];
+
+    /**
+     * Mendapatkan semua produk dalam kategori ini.
+     */
+    public function produks(): HasMany
+    {
+        return $this->hasMany(Produk::class);
+    }
+}

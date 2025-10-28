@@ -21,14 +21,14 @@ class UserFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition(): array
+    public function definition()
     {
         return [
-            'name' => fake()->name(),
+            'nama' => fake()->name(), // DIUBAH dari 'name' menjadi 'nama'
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'password' => bcrypt('password'), // Menggunakan bcrypt untuk hashing
+            // 'email_verified_at' dan 'remember_token' DIHAPUS
+            'role' => 'pembeli', // <-- TAMBAHKAN BARIS INI
         ];
     }
 

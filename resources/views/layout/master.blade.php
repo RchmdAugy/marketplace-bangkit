@@ -16,7 +16,7 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f7f9fc;
+            background-color: #0844a0ff;
         }
         .sidebar {
             background-color: #1abc9c;
