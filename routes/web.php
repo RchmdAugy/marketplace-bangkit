@@ -10,7 +10,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\Admin\UserApprovalController;
 use App\Http\Controllers\Admin\SliderController;
-use App\Http\Controllers\Admin\CategoryController; // <-- TAMBAHKAN INI
+use App\Http\Controllers\Admin\CategoryController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -24,18 +24,11 @@ Route::middleware(['auth'])->group(function() {
     // Produk
     Route::get('/produk', [ProdukController::class, 'index'])->name('produk.index');
     Route::get('/produk/create', [ProdukController::class, 'create'])->name('produk.create');
-    Route::post('/produk', [ProdukController::class, 'store'])->name('produk.store'); // URL lebih baik tanpa /store
+    Route::post('/produk', [ProdukController::class, 'store'])->name('produk.store');
     Route::get('/produk/{id}', [ProdukController::class, 'show'])->name('produk.show');
     Route::get('/produk/{id}/edit', [ProdukController::class, 'edit'])->name('produk.edit');
-
-    // --- PERBAIKAN DI SINI ---
-    // Gunakan PUT untuk update dan hapus '/update' dari URL
     Route::put('/produk/{id}', [ProdukController::class, 'update'])->name('produk.update');
-
-    // Gunakan DELETE untuk destroy, hapus '/delete', dan ganti nama route ke 'destroy'
     Route::delete('/produk/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
-
-    // Filter produk berdasarkan kategori
     Route::get('/produk/kategori/{category:slug}', [ProdukController::class, 'index'])->name('produk.by_category');
 
     // Transaksi Pembeli
@@ -61,7 +54,12 @@ Route::middleware(['auth'])->group(function() {
     // Keranjang
     Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
     Route::post('/keranjang/{produk_id}/add', [KeranjangController::class, 'add'])->name('keranjang.add');
-    Route::post('/keranjang/{id}/update', [KeranjangController::class, 'update'])->name('keranjang.update');
+    
+    // --- INI PERBAIKANNYA ---
+    // Ubah Route::post menjadi Route::put
+    Route::put('/keranjang/{id}/update', [KeranjangController::class, 'update'])->name('keranjang.update');
+    // --- AKHIR PERBAIKAN ---
+
     Route::delete('/keranjang/{id}/remove', [KeranjangController::class, 'remove'])->name('keranjang.remove');
     Route::post('/keranjang/checkout', [TransaksiController::class, 'checkoutKeranjang'])->name('keranjang.checkout');
 
@@ -74,9 +72,17 @@ Route::middleware(['auth'])->group(function() {
 
 Route::prefix('admin')->name('admin.')->group(function () {
 
+
+        // --- TAMBAHKAN RUTE INI ---
+        Route::get('/profil', [App\Http\Controllers\Admin\AdminProfilController::class, 'show'])->name('profil.show');
+        // Anda bisa tambahkan edit/update nanti jika perlu
+        // Route::get('/profil/edit', [App\Http\Controllers\Admin\AdminProfilController::class, 'edit'])->name('profil.edit');
+        // Route::put('/profil', [App\Http\Controllers\Admin\AdminProfilController::class, 'update'])->name('profil.update');
+        // --- BATAS PENAMBAHAN ---
+
         // Fitur Persetujuan Penjual (yang sudah ada, dipindahkan ke sini)
-        Route::get('/approval', [App\Http\Controllers\Admin\UserApprovalController::class, 'index'])->name('approval');
-        Route::post('/approval/{id}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve'])->name('approval.approve');
+        // Route::get('/approval', [App\Http\Controllers\Admin\UserApprovalController::class, 'index'])->name('approval');
+        // Route::post('/approval/{id}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve'])->name('approval.approve');
 
         // CRUD Slider Baru
         Route::resource('sliders', SliderController::class);
@@ -97,8 +103,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Laporan Penjualan
         Route::get('/laporan/penjualan', [App\Http\Controllers\Admin\LaporanController::class, 'penjualan'])->name('laporan.penjualan');
+        // --- RUTE BARU UNTUK DETAIL ---
+        Route::get('/laporan/penjualan/{penjual}', [App\Http\Controllers\Admin\LaporanController::class, 'detailProduk'])->name('laporan.penjualan.detail');
+        // --- AKHIR RUTE BARU ---
 
         Route::get('/produk/approval', [App\Http\Controllers\Admin\ProdukApprovalController::class, 'index'])->name('produk.approval');
         Route::post('/produk/approval/{produk}/approve', [App\Http\Controllers\Admin\ProdukApprovalController::class, 'approve'])->name('produk.approve');
     });
-// Removed redundant define('REMOVE_RJAONGKIR_ROUTES', true); as it's just a comment and not a route itself.

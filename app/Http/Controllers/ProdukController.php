@@ -1,5 +1,5 @@
 <?php
-// File: app/Http/Controllers/ProdukController.php
+
 namespace App\Http\Controllers;
 
 use App\Models\Produk;
@@ -12,54 +12,32 @@ use Illuminate\Support\Facades\File;
 
 class ProdukController extends Controller
 {
-    /**
-     * Menampilkan daftar produk, bisa difilter berdasarkan kategori.
-     * Menerima $category yang di-inject otomatis oleh Laravel jika route produk.by_category diakses.
-     */
     public function index(Category $category = null)
     {
-        // Selalu ambil semua kategori untuk ditampilkan sebagai filter
-        $categories = Category::orderBy('name')->get(); 
-        $currentCategory = $category; // Simpan kategori yang sedang aktif (bisa null)
+        $categories = Category::orderBy('name')->get();
+        $currentCategory = $category;
+        $produkQuery = Produk::with(['user', 'category', 'reviews']);
 
-        // Query dasar untuk produk
-        $produkQuery = Produk::with(['user', 'category', 'reviews']); // Eager load relasi
-
-        // Tentukan filter berdasarkan peran pengguna dan kategori yang dipilih
         if (Auth::check() && Auth::user()->role == 'penjual') {
-            // Penjual hanya melihat produk miliknya
             $produkQuery->where('user_id', Auth::id());
-            // Filter berdasarkan kategori jika ada
             if ($currentCategory) {
-                 $produkQuery->where('category_id', $currentCategory->id);
+                $produkQuery->where('category_id', $currentCategory->id);
             }
         } else {
-             // Pembeli & tamu hanya lihat produk yang approved
             $produkQuery->where('is_approved', true);
-             // Filter berdasarkan kategori jika ada
             if ($currentCategory) {
-                 $produkQuery->where('category_id', $currentCategory->id);
+                $produkQuery->where('category_id', $currentCategory->id);
             }
         }
-
-        // Ambil hasil produk yang sudah difilter
         $produks = $produkQuery->latest()->get();
-
-        // Kirim data ke view
         return view('produk.index', compact('produks', 'categories', 'currentCategory'));
     }
 
-    /**
-     * Menampilkan form untuk membuat produk baru.
-     */
     public function create() {
         $categories = Category::orderBy('name')->get();
         return view('produk.create', compact('categories'));
     }
 
-    /**
-     * Menyimpan produk baru ke database.
-     */
     public function store(Request $request) {
         $request->validate([
             'nama' => 'required|string|max:255',
@@ -67,6 +45,7 @@ class ProdukController extends Controller
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
+            'nama_umkm' => 'required|string|max:255',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ], [
@@ -76,6 +55,7 @@ class ProdukController extends Controller
             'stok.required' => 'Stok produk tidak boleh kosong.',
             'category_id.required' => 'Kategori produk wajib dipilih.',
             'category_id.exists' => 'Kategori yang dipilih tidak valid.',
+            'nama_umkm.required' => 'Nama UMKM/Pembuat produk tidak boleh kosong.',
             'foto.image' => 'File utama harus berupa gambar.',
             'foto.max' => 'Ukuran file utama maksimal 2MB.',
             'gallery_images.*.image' => 'File galeri harus berupa gambar.',
@@ -98,6 +78,7 @@ class ProdukController extends Controller
             'user_id' => Auth::id(),
             'foto' => $namaFotoUtama,
             'category_id' => $request->category_id,
+            'nama_umkm' => $request->nama_umkm,
             'is_approved' => false
         ]);
 
@@ -112,28 +93,23 @@ class ProdukController extends Controller
         return redirect()->route('produk.index')->with('success', 'Produk berhasil ditambahkan dan menunggu persetujuan.');
     }
 
-    /**
-     * Menampilkan detail produk.
-     */
     public function show($id) {
         $produk = Produk::with(['reviews.user', 'user', 'images', 'category'])->findOrFail($id);
-        if (!($produk->is_approved) && !(Auth::check() && in_array(Auth::user()->role, ['admin', 'penjual']))) { abort(404); }
+        if (!($produk->is_approved) && !(Auth::check() && in_array(Auth::user()->role, ['admin', 'penjual']))) {
+            abort(404);
+        }
         return view('produk.detail', compact('produk'));
     }
 
-    /**
-     * Menampilkan form untuk edit produk.
-     */
      public function edit($id) {
         $produk = Produk::with(['images', 'category'])->findOrFail($id);
-        if (Auth::id() !== $produk->user_id && Auth::user()->role !== 'admin') { abort(403); }
+        if (Auth::id() !== $produk->user_id && Auth::user()->role !== 'admin') {
+            abort(403);
+        }
         $categories = Category::orderBy('name')->get();
         return view('produk.edit', compact('produk', 'categories'));
     }
 
-    /**
-     * Memperbarui produk di database.
-     */
     public function update(Request $request, $id) {
          $request->validate([
             'nama' => 'required|string|max:255',
@@ -141,6 +117,7 @@ class ProdukController extends Controller
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
+            'nama_umkm' => 'required|string|max:255',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'delete_images' => 'nullable|array',
@@ -152,6 +129,7 @@ class ProdukController extends Controller
             'stok.required' => 'Stok produk tidak boleh kosong.',
             'category_id.required' => 'Kategori produk wajib dipilih.',
             'category_id.exists' => 'Kategori yang dipilih tidak valid.',
+            'nama_umkm.required' => 'Nama UMKM/Pembuat produk tidak boleh kosong.',
             'foto.image' => 'File utama harus berupa gambar.',
             'foto.max' => 'Ukuran file utama maksimal 2MB.',
             'gallery_images.*.image' => 'File galeri harus berupa gambar.',
@@ -161,16 +139,24 @@ class ProdukController extends Controller
         ]);
 
         $produk = Produk::findOrFail($id);
-        if (Auth::id() !== $produk->user_id && Auth::user()->role !== 'admin') { abort(403); }
+        if (Auth::id() !== $produk->user_id && Auth::user()->role !== 'admin') {
+            abort(403);
+        }
 
-        $dataUpdate = $request->only(['nama', 'deskripsi', 'harga', 'stok', 'category_id']);
+        $dataUpdate = $request->only(['nama', 'deskripsi', 'harga', 'stok', 'category_id', 'nama_umkm']);
 
         if ($request->hasFile('foto')) {
-            if ($produk->foto && File::exists(public_path('foto_produk/'.$produk->foto))) { File::delete(public_path('foto_produk/'.$produk->foto)); }
+            if ($produk->foto && File::exists(public_path('foto_produk/'.$produk->foto))) {
+                File::delete(public_path('foto_produk/'.$produk->foto));
+            }
             $file = $request->file('foto');
             $namaFotoUtama = time().'_'.$file->getClientOriginalName();
             $file->move(public_path('foto_produk'), $namaFotoUtama);
             $dataUpdate['foto'] = $namaFotoUtama;
+        }
+
+        if(Auth::user()->role !== 'admin'){
+            $dataUpdate['is_approved'] = false;
         }
 
         $produk->update($dataUpdate);
@@ -178,11 +164,13 @@ class ProdukController extends Controller
         if ($request->has('delete_images')) {
             $imagesToDelete = ProductImage::whereIn('id', $request->delete_images)->where('produk_id', $produk->id)->get();
             foreach ($imagesToDelete as $img) {
-                if (File::exists(public_path('foto_produk_gallery/'.$img->image_path))) { File::delete(public_path('foto_produk_gallery/'.$img->image_path)); }
+                if (File::exists(public_path('foto_produk_gallery/'.$img->image_path))) {
+                    File::delete(public_path('foto_produk_gallery/'.$img->image_path));
+                }
                 $img->delete();
             }
         }
-        
+
         if ($request->hasFile('gallery_images')) {
             foreach ($request->file('gallery_images') as $galleryFile) {
                 $namaFotoGaleri = time() . '_' . uniqid() . '_' . $galleryFile->getClientOriginalName();
@@ -191,17 +179,22 @@ class ProdukController extends Controller
             }
         }
 
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil diperbarui.');
-    }
+        $message = 'Produk berhasil diperbarui.';
+        if(Auth::user()->role !== 'admin' && !$produk->is_approved) {
+             $message .= ' Produk menunggu persetujuan ulang.';
+        }
+        return redirect()->route('produk.index')->with('success', $message);
+     }
 
-    /**
-     * Menghapus produk dari database.
-     */
     public function destroy($id) {
         $produk = Produk::with('images')->findOrFail($id);
-        if (Auth::id() !== $produk->user_id && Auth::user()->role !== 'admin') { abort(403); }
+        if (Auth::id() !== $produk->user_id && Auth::user()->role !== 'admin') {
+            abort(403);
+        }
 
-        if ($produk->foto && File::exists(public_path('foto_produk/'.$produk->foto))) { File::delete(public_path('foto_produk/'.$produk->foto)); }
+        if ($produk->foto && File::exists(public_path('foto_produk/'.$produk->foto))) {
+            File::delete(public_path('foto_produk/'.$produk->foto));
+        }
         foreach ($produk->images as $img) {
             if (File::exists(public_path('foto_produk_gallery/'.$img->image_path))) {
                 File::delete(public_path('foto_produk_gallery/'.$img->image_path));

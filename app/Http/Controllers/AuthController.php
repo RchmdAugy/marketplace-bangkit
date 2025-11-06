@@ -25,20 +25,25 @@ class AuthController extends Controller
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
 
-            // Cek apakah penjual sudah disetujui
+            // <-- DIHAPUS
+            // Logika untuk mengecek approval penjual tidak lagi diperlukan
+            // saat login, karena tidak ada penjual baru.
+            /*
             if ($user->role === 'penjual' && !$user->is_approved) {
                 Auth::logout();
                 return redirect()->route('login')->withErrors([
                     'email' => 'Akun Anda belum disetujui oleh admin.',
                 ]);
             }
+            */
 
-           if ($user->role === 'admin') {
-                // DIUBAH: Mengarahkan ke dashboard admin baru
+            if ($user->role === 'admin') {
                 return redirect()->route('admin.dashboard')->with('success', 'Selamat datang, Admin!');
-            } elseif ($user->role === 'penjual') {
-                return redirect()->route('home')->with('success', 'Berhasil login!');
-            } else {
+            } 
+            // <-- DIUBAH
+            // Logika untuk 'penjual' dan 'pembeli' disatukan.
+            // Semua user non-admin akan diarahkan ke 'home'.
+            else {
                 return redirect()->route('home')->with('success', 'Berhasil login!');
             }
 
@@ -61,14 +66,17 @@ class AuthController extends Controller
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8',
-            'role' => 'required|in:pembeli,penjual',
+            // 'role' => 'required|in:pembeli,penjual', // <-- DIHAPUS
         ];
 
-        // Tambahkan aturan validasi kondisional untuk penjual
+        // <-- DIHAPUS
+        // Seluruh blok validasi kondisional untuk penjual dihapus
+        /*
         if ($request->role == 'penjual') {
             $rules['nomor_lisensi'] = 'required|string|max:255';
             $rules['file_lisensi'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
         }
+        */
 
         $request->validate($rules);
 
@@ -77,29 +85,33 @@ class AuthController extends Controller
             'nama' => $request->nama,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'is_approved' => $request->role === 'penjual' ? 0 : 1, // Penjual butuh approval
+            'role' => 'pembeli', // <-- DIUBAH (Hardcoded menjadi 'pembeli')
+            'is_approved' => 1, // <-- DIUBAH (Langsung disetujui)
         ];
         
-        // Proses upload file lisensi jika rolenya penjual
+        // <-- DIHAPUS
+        // Seluruh blok untuk upload file lisensi penjual dihapus
+        /*
         if ($request->role == 'penjual') {
             if ($request->hasFile('file_lisensi')) {
                 $file = $request->file('file_lisensi');
                 $filename = time() . '_' . $file->getClientOriginalName();
-                // Simpan ke disk 'public', di dalam folder 'lisensi_penjual'
-                $file->storeAs('lisensi_penjual', $filename, 'public'); // <-- KODE BARU
+                $file->storeAs('lisensi_penjual', $filename, 'public'); 
                 
                 $dataToCreate['nomor_lisensi'] = $request->nomor_lisensi;
                 $dataToCreate['file_lisensi'] = $filename;
             }
         }
+        */
 
         // Buat user baru
         User::create($dataToCreate);
 
-        return redirect()->route('login')->with('success', $request->role === 'penjual'
-            ? 'Registrasi berhasil. Akun Anda akan ditinjau oleh admin.'
-            : 'Registrasi berhasil. Silakan login.'
+        // <-- DIUBAH
+        // Pesan sukses disederhanakan, hanya untuk 'pembeli'
+        return redirect()->route('login')->with(
+            'success', 
+            'Registrasi berhasil. Silakan login.'
         );
     }
 

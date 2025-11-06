@@ -8,21 +8,6 @@
         <h2 class="fw-bold text-secondary mb-0">Keranjang Belanja Anda</h2>
     </div>
 
-    {{-- Alert untuk pesan sukses/error (ditingkatkan dengan SweetAlert di layout.public) --}}
-    {{-- Jika Anda masih ingin alert Bootstrap, Anda bisa pakai ini. Tapi SweetAlert lebih modern. --}}
-    {{-- @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif --}}
-
     @if($items->count())
         <div class="row g-4">
             <div class="col-lg-8">
@@ -34,10 +19,18 @@
                             <div class="col-md-2 col-3">
                                 @php
                                     $imagePath = asset('foto_produk/' . $item->produk->foto);
-                                    $defaultImage = asset('images/default-product.png'); // Pastikan Anda punya gambar default ini
+                                    if (!$item->produk->foto || !file_exists(public_path('foto_produk/' . $item->produk->foto))) {
+                                        // Cek gallery pertama jika foto utama tidak ada
+                                        $firstGalleryImage = $item->produk->images->first();
+                                        if ($firstGalleryImage && file_exists(public_path('foto_produk_gallery/' . $firstGalleryImage->image_path))) {
+                                            $imagePath = asset('foto_produk_gallery/' . $firstGalleryImage->image_path);
+                                        } else {
+                                            $imagePath = null; // Tandai untuk gambar default
+                                        }
+                                    }
                                 @endphp
                                 <div class="keranjang-img-wrapper rounded-3 overflow-hidden">
-                                    @if($item->produk->foto && file_exists(public_path('foto_produk/' . $item->produk->foto)))
+                                    @if($imagePath)
                                         <img src="{{ $imagePath }}" alt="{{ $item->produk->nama }}" class="img-fluid keranjang-product-image">
                                     @else
                                         <div class="keranjang-no-image bg-light text-muted d-flex align-items-center justify-content-center">
@@ -63,7 +56,7 @@
                                     <input type="number" name="jumlah" value="{{ $item->jumlah }}" 
                                            min="1" max="{{ $item->produk->stok }}" 
                                            class="form-control text-center quantity-input" 
-                                           data-item-id="{{ $item->id }}" {{-- Tambahkan data-item-id --}}
+                                           data-item-id="{{ $item->id }}" 
                                            style="width: 60px;">
                                     <button type="button" class="btn btn-outline-secondary quantity-plus btn-qty-square">+</button>
                                 </form>
@@ -111,11 +104,16 @@
                             
                             @php
                                 $grandTotal = $items->sum(function($item) {
-                                    return $item->produk->harga * $item->jumlah;
+                                    // Pastikan produk ada sebelum menghitung
+                                    if ($item->produk) {
+                                        return $item->produk->harga * $item->jumlah;
+                                    }
+                                    return 0;
                                 });
+                                $totalItems = $items->sum('jumlah');
                             @endphp
                             <div class="d-flex justify-content-between mb-3">
-                                <span class="text-muted">Subtotal ({{ $items->sum('jumlah') }} produk)</span>
+                                <span class="text-muted">Subtotal ({{ $totalItems }} produk)</span>
                                 <span class="fw-medium text-secondary">Rp {{ number_format($grandTotal,0,',','.') }}</span>
                             </div>
                             
@@ -137,6 +135,7 @@
     @else
         {{-- Empty Cart State --}}
         <div class="text-center py-5 my-5">
+            {{-- Ganti icon jika Anda menggunakan library font yang berbeda --}}
             <i class="fa fa-shopping-cart fa-7x text-border-color mb-4 animate__animated animate__bounceIn"></i>
             <h4 class="fw-bold text-secondary mb-2">Keranjang Anda masih kosong</h4>
             <p class="text-muted fs-6 mb-4">Yuk, isi dengan produk-produk UMKM favoritmu dan dukung produk lokal!</p>
@@ -151,13 +150,24 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Pastikan SweetAlert (swal) sudah di-load di layout utama Anda
+    if (typeof swal !== 'function') {
+        console.error('SweetAlert (swal) is not loaded.');
+    }
+
     const quantityForms = document.querySelectorAll('.quantity-form');
 
     quantityForms.forEach(form => {
         const minusBtn = form.querySelector('.quantity-minus');
         const plusBtn = form.querySelector('.quantity-plus');
         const input = form.querySelector('.quantity-input');
-        const itemId = input.dataset.itemId; // Mengambil item ID dari data attribute
+        
+        if (!minusBtn || !plusBtn || !input) {
+            console.error('Form quantity tidak lengkap', form);
+            return;
+        }
+
+        const itemId = input.dataset.itemId; 
         let debounceTimer;
 
         const submitForm = () => {
@@ -165,21 +175,37 @@ document.addEventListener('DOMContentLoaded', function () {
             debounceTimer = setTimeout(() => {
                 // Menggunakan AJAX untuk update agar halaman tidak reload
                 const formData = new FormData(form);
-                formData.append('_method', 'PUT'); // Pastikan method PUT terkirim
                 
+                // --- INI PERBAIKANNYA ---
+                // Paksa formData untuk menggunakan nilai 'jumlah' TERBARU dari input
+                formData.set('jumlah', input.value); 
+                // --- AKHIR PERBAIKAN ---
+
                 fetch(form.action, {
                     method: 'POST', // Fetch API akan menggunakan POST untuk _method=PUT
                     body: formData,
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json' // Pastikan server merespon JSON
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        // Tangani error server (500, 404, dll)
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         // Perbarui total harga di kartu item dan ringkasan
                         const cardBody = form.closest('.card-body');
-                        cardBody.querySelector('.fw-bold.text-primary').textContent = `Rp ${data.new_subtotal.toLocaleString('id-ID')}`;
+                        if (cardBody) {
+                            const subtotalEl = cardBody.querySelector('.fw-bold.text-primary');
+                            if (subtotalEl) {
+                                subtotalEl.textContent = `Rp ${data.new_subtotal.toLocaleString('id-ID')}`;
+                            }
+                        }
                         
                         // Perbarui grand total di ringkasan belanja
                         const grandTotalElement = document.querySelector('.d-flex.fw-bold.fs-5 .text-primary');
@@ -195,33 +221,40 @@ document.addEventListener('DOMContentLoaded', function () {
                             subtotalCountElement.textContent = `Subtotal (${data.total_items_count} produk)`;
                         }
 
-                        // Tampilkan sweetalert sukses (opsional, bisa dihilangkan jika terlalu sering)
-                        // swal({
-                        //     title: "Berhasil!",
-                        //     text: "Jumlah produk berhasil diperbarui.",
-                        //     icon: "success",
-                        //     button: false,
-                        //     timer: 1500
-                        // });
                     } else {
-                        swal({
-                            title: "Gagal!",
-                            text: data.message || "Gagal memperbarui jumlah produk.",
-                            icon: "error",
-                            button: "Coba Lagi",
-                        });
+                        // Tampilkan error dari server (misal: stok habis)
+                        if (typeof swal === 'function') {
+                            swal({
+                                title: "Gagal!",
+                                text: data.message || "Gagal memperbarui jumlah produk.",
+                                icon: "error",
+                                button: "Coba Lagi",
+                            });
+                        } else {
+                            alert(data.message || "Gagal memperbarui jumlah produk.");
+                        }
                         // Kembalikan nilai input ke nilai sebelumnya jika gagal
-                        input.value = data.old_jumlah; 
+                        if (data.old_jumlah) {
+                            input.value = data.old_jumlah; 
+                        }
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    swal({
-                        title: "Terjadi Kesalahan!",
-                        text: "Tidak dapat menghubungi server. Coba lagi.",
-                        icon: "error",
-                        button: "Oke",
-                    });
+                    console.error('Error saat update keranjang:', error);
+                    let errorMessage = "Tidak dapat menghubungi server. Coba lagi.";
+                    if (error && error.message) {
+                        errorMessage = error.message;
+                    }
+                    if (typeof swal === 'function') {
+                        swal({
+                            title: "Terjadi Kesalahan!",
+                            text: errorMessage,
+                            icon: "error",
+                            button: "Oke",
+                        });
+                    } else {
+                         alert(errorMessage);
+                    }
                 });
             }, 500); // Tunggu 500ms sebelum mengirim AJAX
         };
@@ -241,20 +274,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 input.value = currentValue + 1;
                 submitForm();
             } else {
-                swal({
-                    title: "Stok Habis!",
-                    text: "Jumlah maksimal yang bisa ditambahkan adalah stok produk yang tersedia.",
-                    icon: "warning",
-                    button: "Oke",
-                });
+                if (typeof swal === 'function') {
+                    swal({
+                        title: "Stok Habis!",
+                        text: "Jumlah maksimal yang bisa ditambahkan adalah stok produk yang tersedia.",
+                        icon: "warning",
+                        button: "Oke",
+                    });
+                } else {
+                    alert("Stok produk tidak mencukupi.");
+                }
             }
         });
+    });
 
-        // Event listener untuk SweetAlert konfirmasi hapus
-        document.querySelectorAll('.delete-form-keranjang').forEach(form => {
-            form.addEventListener('submit', function(event) {
-                event.preventDefault(); // Mencegah form langsung dikirim
+    // Event listener untuk SweetAlert konfirmasi hapus
+    document.querySelectorAll('.delete-form-keranjang').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Mencegah form langsung dikirim
 
+            if (typeof swal === 'function') {
                 swal({
                     title: "Hapus Item Ini?",
                     text: "Item ini akan dihapus dari keranjang belanja Anda.",
@@ -277,10 +316,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .then((willDelete) => {
                     if (willDelete) {
-                        this.submit();
+                        this.submit(); // Kirim form jika user konfirmasi
                     }
                 });
-            });
+            } else {
+                // Fallback jika SweetAlert tidak ada
+                if (confirm("Apakah Anda yakin ingin menghapus item ini dari keranjang?")) {
+                    this.submit();
+                }
+            }
         });
     });
 });
@@ -290,16 +334,19 @@ document.addEventListener('DOMContentLoaded', function () {
 @push('styles')
 <style>
     /* Custom CSS untuk Keranjang */
+    .keranjang-item-card {
+        transition: all 0.2s ease-in-out;
+    }
     .keranjang-item-card:hover {
-        box-shadow: 0 8px 20px var(--shadow-medium) !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
         transform: translateY(-3px);
     }
     .keranjang-img-wrapper {
         width: 100%;
         padding-top: 100%; /* Rasio 1:1 */
         position: relative;
-        background-color: var(--light-bg-color);
-        border: 1px solid var(--border-color);
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
     }
     .keranjang-product-image,
     .keranjang-no-image {
@@ -311,33 +358,44 @@ document.addEventListener('DOMContentLoaded', function () {
         object-fit: cover;
     }
     .keranjang-no-image {
-        color: var(--border-color);
-        font-size: 2.5rem;
+        color: #ced4da;
+        font-size: 2.5rem; /* Ukuran icon disesuaikan */
     }
 
     /* Input Quantity di Keranjang */
     .quantity-form .form-control.quantity-input {
-        border-color: var(--border-color);
+        border-color: #dee2e6;
         border-left: none;
         border-right: none;
         font-weight: 500;
-        color: var(--secondary-color);
+        color: #212529;
         height: 38px; /* Pastikan tinggi konsisten */
+        box-shadow: none;
     }
+    /* Hapus panah atas/bawah di input number */
+    .quantity-form .quantity-input::-webkit-outer-spin-button,
+    .quantity-form .quantity-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .quantity-form .quantity-input[type=number] {
+        -moz-appearance: textfield;
+    }
+
     .quantity-form .btn.btn-outline-secondary.btn-qty-square {
-        border-color: var(--border-color);
-        color: var(--secondary-color);
+        border-color: #dee2e6;
+        color: #495057;
         width: 38px; /* Lebar dan tinggi sama */
         height: 38px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all var(--transition-speed) ease;
+        transition: all 0.2s ease;
     }
     .quantity-form .btn.btn-outline-secondary.btn-qty-square:hover {
-        background-color: var(--light-bg-color);
-        border-color: var(--primary-color);
-        color: var(--primary-color);
+        background-color: #f1f3f5;
+        border-color: #0d6efd; /* Ganti dengan var(--primary-color) jika ada */
+        color: #0d6efd;
     }
     /* Rounded corners untuk tombol +- */
     .quantity-form .btn:first-of-type {
@@ -351,8 +409,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* Tombol hapus keranjang */
     .keranjang-item-card .btn.text-danger-hover {
-        color: var(--secondary-color); /* Warna default agar tidak terlalu mencolok */
-        transition: all var(--transition-speed) ease;
+        color: #6c757d; /* Warna default agar tidak terlalu mencolok */
+        transition: all 0.2s ease;
     }
     .keranjang-item-card .btn.text-danger-hover:hover {
         color: #EF4444 !important; /* Warna merah saat hover */
@@ -364,15 +422,17 @@ document.addEventListener('DOMContentLoaded', function () {
         border-radius: 0.75rem; /* Sudut lebih bulat */
     }
     .form-control-lg:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
+        border-color: #0d6efd; /* Ganti dengan var(--primary-color) jika ada */
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Ganti dengan var(--primary-color) jika ada */
     }
 
     /* Placeholder text for empty cart */
     .text-border-color {
-        color: var(--border-color);
+        color: #dee2e6;
     }
-    .animate__bounceIn {
+    
+    /* Ganti ini jika Anda tidak memakai animate.css */
+    .animate__animated.animate__bounceIn {
         animation-duration: 0.8s;
         animation-name: bounceIn;
     }
@@ -391,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         .keranjang-product-image,
         .keranjang-no-image {
-            object-fit: contain; /* Agar gambar tidak terpotong di mobile jika dimensinya aneh */
+            object-fit: contain; /* Agar gambar tidak terpotong di mobile */
         }
         .keranjang-no-image {
             font-size: 1.5rem;
@@ -407,6 +467,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 </style>
-{{-- Membutuhkan animate.css untuk efek bounceIn, jika belum ada di public.blade.php --}}
+{{-- Membutuhkan animate.css, pastikan sudah ada di layout.public.blade.php --}}
 {{-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/> --}}
 @endpush

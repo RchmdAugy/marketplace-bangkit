@@ -39,7 +39,6 @@
                         <label for="role" class="block mb-2 text-sm font-bold text-slate-700 dark:text-white/80">Role</label>
                         <select id="role" name="role" class="focus:shadow-primary-outline dark:bg-slate-850 dark:text-white text-sm leading-5.6 ease block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none" required>
                             <option value="pembeli" {{ old('role') == 'pembeli' ? 'selected' : '' }}>Pembeli</option>
-                            <option value="penjual" {{ old('role') == 'penjual' ? 'selected' : '' }}>Penjual</option>
                             <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
                         </select>
                         @error('role') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror

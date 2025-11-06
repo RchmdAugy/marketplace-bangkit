@@ -123,4 +123,14 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Nomor WhatsApp PLUT
+    |--------------------------------------------------------------------------
+    |
+    | Nomor ini digunakan untuk mengirim konfirmasi pesanan.
+    |
+    */
+    'plut_whatsapp_number' => env('PLUT_WHATSAPP_NUMBER'), // <-- TAMBAHKAN BARIS INI
+
 ];

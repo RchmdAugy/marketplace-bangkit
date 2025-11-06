@@ -8,7 +8,16 @@ class TransaksiDetail extends Model
 {
     protected $fillable = ['transaksi_id', 'produk_id', 'jumlah', 'harga'];
 
+    // Relasi ke Produk
     public function produk() {
-    return $this->belongsTo(\App\Models\Produk::class);
+        // Gunakan ::class untuk namespace yang lebih aman
+        return $this->belongsTo(Produk::class);
     }
+
+    // --- TAMBAHKAN RELASI INI ---
+    // Relasi ke Transaksi (Induk)
+    public function transaksi() {
+        return $this->belongsTo(Transaksi::class);
+    }
+    // --- AKHIR TAMBAHAN ---
 }

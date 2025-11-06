@@ -26,8 +26,8 @@ class User extends Authenticatable
         'nama_toko',
         'no_telepon',
         'alamat_toko',
-        'nomor_lisensi',  // Tambahkan ini
-        'file_lisensi',   // Tambahkan ini
+        // 'nomor_lisensi',  // Tambahkan ini
+        // 'file_lisensi',   // Tambahkan ini
     ];
 
     /**
