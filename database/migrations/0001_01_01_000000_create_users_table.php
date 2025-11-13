@@ -9,8 +9,8 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
- public function up()
-{
+    public function up()
+    {
     Schema::create('users', function (Blueprint $table) {
         $table->id();
         $table->string('nama');
@@ -23,15 +23,27 @@ return new class extends Migration
 
     // Tambahkan akun admin langsung
     DB::table('users')->insert([
-        'nama' => 'Admin1',
-        'email' => 'admin@gmail.com',
-        'password' => Hash::make('admin123'), // ganti password sesuai keinginan
-        'role' => 'admin',
-        'is_approved' => true,
-        'created_at' => now(),
-        'updated_at' => now(),
+        // User 1 (yang sudah ada)
+        [
+            'nama' => 'Admin1',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('admin123'), // ganti password sesuai keinginan
+            'role' => 'admin',
+            'is_approved' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        // User 2 (TAMBAHAN ANDA)
+        [
+            'nama' => 'Galeri PLUT', // <-- GANTI INI
+            'email' => 'galeriplut@gmail.com', // <-- GANTI INI
+            'password' => Hash::make('plut123'), // <-- GANTI INI
+            'role' => 'penjual', // <-- GANTI INI
+            'is_approved' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]
     ]);
-
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

@@ -7,12 +7,13 @@
     <title>Admin Panel - @yield('title', 'Dashboard')</title>
 
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
-    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/6aa3a0791a.js" crossorigin="anonymous"></script>
 
     {{-- Tailwind CSS Assets --}}
     <link href="{{ asset('admin_assets/css/nucleo-icons.css') }}" rel="stylesheet" />
     <link href="{{ asset('admin_assets/css/nucleo-svg.css') }}" rel="stylesheet" />
-    <link href="{{ asset('admin_assets/css/argon-dashboard-tailwind.css?v=1.0.1') }}" rel="stylesheet" />
+    {{-- DENGAN VERSI .MIN (PRODUKSI) INI: --}}
+    <link href="{{ asset('admin_assets/css/argon-dashboard-tailwind.min.css?v=1.0.1') }}" rel="stylesheet" />
     
     {{-- Custom CSS untuk Admin Panel --}}
     <style>
@@ -38,9 +39,9 @@
 
         /* Navbar Sticky Background saat scroll (dikelola JS tema tapi bisa di-force) */
         nav[navbar-scroll="true"] {
-             background-color: rgba(255, 255, 255, 0.8) !important; /* White with opacity */
-             backdrop-filter: saturate(200%) blur(30px) !important;
-             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            background-color: rgba(255, 255, 255, 0.8) !important; /* White with opacity */
+            backdrop-filter: saturate(200%) blur(30px) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
         }
         /* Dark mode for Navbar Sticky */
         .dark nav[navbar-scroll="true"] {
@@ -86,11 +87,10 @@
         </div>
     </main>
 
-    {{-- Core plugin JavaScript (tidak berubah) --}}
-    <script src="{{ asset('admin_assets/js/plugins/perfect-scrollbar.min.js') }}" async></script>
-    <script src="{{ asset('admin_assets/js/argon-dashboard-tailwind.js?v=1.0.1') }}" async></script>
-
+    {{-- Core plugin JavaScript: HANYA PERLU SATU FILE INI --}}
+    {{-- Path-nya sudah benar menunjuk ke folder /plugins/ --}}
+    <script src="{{ asset('admin_assets/js/argon-dashboard-tailwind.min.js?v=1.0.1') }}" async></script>
+    
     @stack('scripts')
 </body>
 </html>
-

@@ -8,12 +8,11 @@ use Illuminate\Support\Facades\Hash;
 // Pastikan ini adalah base controller Anda yang benar
 use App\Http\Controllers\Controller; 
 
-// class KelolaUserController extends AdminBaseController
 class KelolaUserController extends Controller
 {
     public function index()
     {
-        // DIKEMBALIKAN: Menampilkan semua user termasuk penjual
+        // FUNGSI INI SUDAH OTOMATIS HANYA MENGAMBIL USER AKTIF (karena SoftDeletes)
         $users = User::orderBy('role')->orderBy('nama')->paginate(10);
         return view('admin.users.index', compact('users'));
     }
@@ -25,12 +24,11 @@ class KelolaUserController extends Controller
 
     public function store(Request $request)
     {
-        // VALIDASI TETAP: Hanya bisa membuat Admin atau Pembeli
         $request->validate([
             'nama' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:5',
-            'role' => 'required|in:admin,pembeli', // 'penjual' sengaja tidak ada
+            'role' => 'required|in:admin,pembeli', 
         ]);
 
         User::create([
@@ -38,7 +36,7 @@ class KelolaUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'is_approved' => 1, // Otomatis approve karena bukan penjual
+            'is_approved' => 1, 
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'User berhasil ditambahkan.');
@@ -46,13 +44,11 @@ class KelolaUserController extends Controller
 
     public function edit(User $user)
     {
-        // DIKEMBALIKAN: Mengizinkan edit semua role
         return view('admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
-        // DIKEMBALIKAN: Validasi mengizinkan 'penjual' (untuk user yang sudah ada)
         $request->validate([
             'nama' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -65,7 +61,6 @@ class KelolaUserController extends Controller
             $userData['password'] = Hash::make($request->password);
         }
         
-        // Menambahkan kembali logika approval jika rolenya diubah
         if ($user->role !== $request->role) {
              $userData['is_approved'] = $request->role === 'penjual' ? 0 : 1;
         }
@@ -81,8 +76,51 @@ class KelolaUserController extends Controller
             return back()->withErrors('Anda tidak bisa menghapus akun sendiri.');
         }
 
+        // INI SEKARANG OTOMATIS MENJADI SOFT DELETE
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dihapus.');
+        return redirect()->route('admin.users.index')->with('success', 'User berhasil dinonaktifkan.'); // Ubah pesan
+    }
+
+
+    // --- FUNGSI BARU UNTUK FITUR SAMPAH/RESTORE ---
+
+    /**
+     * Menampilkan daftar user yang sudah di-soft-delete (di keranjang sampah).
+     */
+    public function sampah()
+    {
+        // Ambil HANYA user yang sudah di-soft-delete
+        $users = User::onlyTrashed()->orderBy('deleted_at', 'desc')->paginate(10);
+        
+        // Kirim ke view baru 'admin.users.sampah'
+        return view('admin.users.sampah', compact('users'));
+    }
+
+    /**
+     * Memulihkan user yang sudah di-soft-delete.
+     */
+    public function restore($id)
+    {
+        // Cari user di keranjang sampah berdasarkan ID
+        $user = User::onlyTrashed()->findOrFail($id);
+        
+        // Perintah untuk memulihkan user
+        $user->restore(); 
+
+        return redirect()->route('admin.users.sampah')->with('success', 'User berhasil dipulihkan.');
+    }
+
+    /**
+     * Menghapus user secara permanen dari database.
+     */
+    public function forceDelete($id)
+    {
+        // Cari user di keranjang sampah berdasarkan ID
+        $user = User::onlyTrashed()->findOrFail($id);
+        
+        // Perintah untuk menghapus permanen
+        $user->forceDelete(); 
+
+        return redirect()->route('admin.users.sampah')->with('success', 'User berhasil dihapus permanen.');
     }
 }
-

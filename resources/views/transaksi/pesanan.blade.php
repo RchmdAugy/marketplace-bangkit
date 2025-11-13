@@ -44,9 +44,17 @@
                             <td class="fw-medium px-4">#{{ $trx->id }}</td>
                             <td class="px-4">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{ $trx->user->foto_profil ? asset('foto_profil/'.$trx->user->foto_profil) : 'https://ui-avatars.com/api/?name='.urlencode($trx->user->nama).'&background=E2E8F0&color=334155&size=64' }}"
-                                         class="rounded-circle me-2 shadow-sm" style="width: 32px; height: 32px; object-fit: cover;" alt="Foto">
-                                    <span class="fw-medium text-dark">{{ $trx->user->nama }}</span>
+                                    @if($trx->user)
+                                        {{-- Tampilkan data jika user-nya ada --}}
+                                        <img src="{{ $trx->user->foto_profil ? asset('foto_profil/'.$trx->user->foto_profil) : 'https://ui-avatars.com/api/?name='.urlencode($trx->user->nama).'&background=E2E8F0&color=334155&size=64' }}"
+                                            class="rounded-circle me-2 shadow-sm" style="width: 32px; height: 32px; object-fit: cover;" alt="Foto">
+                                        <span class="fw-medium text-dark">{{ $trx->user->nama }}</span>
+                                    @else
+                                        {{-- Tampilkan ini jika user-nya null (sudah dihapus) --}}
+                                        <img src="https://ui-avatars.com/api/?name=X&background=E2E8F0&color=334155&size=64"
+                                            class="rounded-circle me-2 shadow-sm" style="width: 32px; height: 32px; object-fit: cover;" alt="Foto">
+                                        <span class="fw-medium text-danger fst-italic">[User Dihapus]</span>
+                                    @endif
                                 </div>
                             </td>
                             <td class="fw-bold px-4">Rp {{ number_format($trx->total_harga,0,',','.') }}</td>
@@ -105,7 +113,11 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted small">Pembeli:</span>
-                        <span class="fw-medium text-dark">{{ $trx->user->nama }}</span>
+                        @if($trx->user)
+                            <span class="fw-medium text-dark">{{ $trx->user->nama }}</span>
+                        @else
+                            <span class="fw-medium text-danger fst-italic">[User Dihapus]</span>
+                        @endif
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted small">Total:</span>

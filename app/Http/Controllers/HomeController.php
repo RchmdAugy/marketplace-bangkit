@@ -32,11 +32,21 @@ class HomeController extends Controller
             ->pluck('produk_id'); // Ambil ID produknya saja
 
         // 2. Ambil data produk terlaris (dengan relasi user & category)
-        $produksUnggulan = Produk::with(['user', 'category', 'images']) // Eager load relasi
-                                ->whereIn('id', $produkTerlarisIds)
-                                ->where('is_approved', true) // Double check approval
-                                ->orderByRaw(DB::raw("FIELD(id, ".implode(',', $produkTerlarisIds->toArray()).")")) // Urutkan sesuai $produkTerlarisIds
-                                ->get();
+        // Bangun query-nya terlebih dahulu
+        $produksUnggulanQuery = Produk::with(['user', 'category', 'images']) // Eager load relasi
+                                    ->whereIn('id', $produkTerlarisIds)
+                                    ->where('is_approved', true); // Double check approval
+
+        // --- AWAL PERBAIKAN ---
+        // Hanya terapkan pengurutan FIELD jika collection $produkTerlarisIds TIDAK kosong
+        if ($produkTerlarisIds->isNotEmpty()) {
+            $produksUnggulanQuery->orderByRaw(DB::raw("FIELD(id, " . implode(',', $produkTerlarisIds->toArray()) . ")"));
+        }
+        // --- AKHIR PERBAIKAN ---
+
+        // Eksekusi query untuk mendapatkan collection
+        $produksUnggulan = $produksUnggulanQuery->get();
+
 
         // 3. Jika kurang dari $jumlahProdukUnggulan, tambahkan produk lain secara acak
         $jumlahKurang = $jumlahProdukUnggulan - $produksUnggulan->count();

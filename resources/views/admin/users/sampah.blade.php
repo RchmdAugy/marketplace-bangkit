@@ -1,30 +1,19 @@
 @extends('layout.admin')
 
-@section('title', 'Kelola User')
-@section('page_title', 'Kelola User')
+@section('title', 'Keranjang Sampah User')
+@section('page_title', 'Keranjang Sampah User')
 
 @section('content')
 <div class="flex flex-wrap -mx-3">
     <div class="w-full max-w-full px-3 mt-0 mb-6 lg:mb-0 lg:w-full lg:flex-none">
         <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
             <div class="p-4 pb-0 mb-0 rounded-t-4">
-                
-                {{-- --- AWAL PERUBAHAN --- --}}
                 <div class="flex justify-between items-center">
-                    <h6 class="mb-2 dark:text-white">Daftar Pengguna (Admin & Pembeli)</h6>
-                    <div>
-                        {{-- TOMBOL BARU KE KERANJANG SAMPAH --}}
-                        <a href="{{ route('admin.users.sampah') }}" class="inline-block px-4 py-2 mb-0 font-bold text-center uppercase align-middle transition-all bg-transparent border border-solid rounded-lg shadow-none cursor-pointer leading-pro ease-in-out text-xs hover:scale-102 active:shadow-xs tracking-tight-rem border-slate-700 text-slate-700 hover:opacity-75">
-                            Keranjang Sampah
-                        </a>
-                        {{-- TOMBOL TAMBAH USER ANDA --}}
-                        <a href="{{ route('admin.users.create') }}" class="inline-block px-4 py-2 mb-0 ml-2 font-bold text-center uppercase align-middle transition-all bg-transparent border border-solid rounded-lg shadow-none cursor-pointer leading-pro ease-in-out text-xs hover:scale-102 active:shadow-xs tracking-tight-rem border-blue-500 text-blue-500 hover:opacity-75">
-                            Tambah User
-                        </a>
-                    </div>
+                    <h6 class="mb-2 dark:text-white">Daftar User Non-Aktif</h6>
+                    <a href="{{ route('admin.users.index') }}" class="inline-block px-4 py-2 mb-0 font-bold text-center uppercase align-middle transition-all bg-transparent border border-solid rounded-lg shadow-none cursor-pointer leading-pro ease-in-out text-xs hover:scale-102 active:shadow-xs tracking-tight-rem border-slate-700 text-slate-700 hover:opacity-75">
+                        &laquo; Kembali ke Daftar User
+                    </a>
                 </div>
-                {{-- --- AKHIR PERUBAHAN --- --}}
-
             </div>
             <div class="overflow-x-auto">
                 @if (session('success'))
@@ -32,20 +21,13 @@
                         {{ session('success') }}
                     </div>
                 @endif
-                @if ($errors->any())
-                    <div class="px-4 py-2 mx-4 my-2 text-white bg-red-500 rounded-lg">
-                        <ul>
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+                
                 <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
                     <thead>
                         <tr>
                             <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Nama</th>
                             <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Role</th>
+                            <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Tgl. Dinonaktifkan</th>
                             <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Aksi</th>
                         </tr>
                     </thead>
@@ -63,21 +45,27 @@
                             <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
                                 <p class="mb-0 text-sm font-semibold leading-tight dark:text-white">{{ ucfirst($user->role) }}</p>
                             </td>
-                            
+                            <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                                <p class="mb-0 text-sm leading-tight dark:text-white">{{ $user->deleted_at->format('d M Y, H:i') }}</p>
+                            </td>
                             <td class="p-2 text-center align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
-                                <a href="{{ route('admin.users.edit', $user->id) }}" class="text-xs font-semibold leading-tight dark:text-white text-slate-400"> Edit </a>
-                                @if(auth()->id() !== $user->id)
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan user ini?');">
+                                {{-- TOMBOL PULIHKAN --}}
+                                <form action="{{ route('admin.users.restore', $user->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-xs font-semibold leading-tight text-green-500"> Pulihkan </button>
+                                </form>
+                                
+                                {{-- TOMBOL HAPUS PERMANEN --}}
+                                <form action="{{ route('admin.users.forceDelete', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('PERINGATAN: Anda yakin ingin menghapus user ini secara PERMANEN? Tindakan ini tidak bisa dibatalkan dan BISA merusak data transaksi terkait.');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="ml-2 text-xs font-semibold leading-tight text-red-500"> Nonaktifkan </button>
+                                    <button type="submit" class="ml-2 text-xs font-semibold leading-tight text-red-500"> Hapus Permanen </button>
                                 </form>
-                                @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="3" class="p-4 text-center text-sm text-slate-500">Tidak ada data pengguna.</td>
+                            <td colspan="4" class="p-4 text-center text-sm text-slate-500">Keranjang sampah kosong.</td>
                         </tr>
                         @endforelse
                     </tbody>

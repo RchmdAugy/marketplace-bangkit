@@ -101,6 +101,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/users/{user}', [App\Http\Controllers\Admin\KelolaUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [App\Http\Controllers\Admin\KelolaUserController::class, 'destroy'])->name('users.destroy');
 
+        // --- TAMBAHKAN 3 RUTE DI BAWAH INI UNTUK FITUR SAMPAH/RESTORE ---
+        Route::get('/users/sampah', [App\Http\Controllers\Admin\KelolaUserController::class, 'sampah'])->name('users.sampah');
+        Route::post('/users/{id}/restore', [App\Http\Controllers\Admin\KelolaUserController::class, 'restore'])->name('users.restore');
+        Route::delete('/users/{id}/force-delete', [App\Http\Controllers\Admin\KelolaUserController::class, 'forceDelete'])->name('users.forceDelete');
+
         // Laporan Penjualan
         Route::get('/laporan/penjualan', [App\Http\Controllers\Admin\LaporanController::class, 'penjualan'])->name('laporan.penjualan');
         // --- RUTE BARU UNTUK DETAIL ---
