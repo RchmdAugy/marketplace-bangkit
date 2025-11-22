@@ -37,7 +37,7 @@ return new class extends Migration
         [
             'nama' => 'Galeri PLUT', // <-- GANTI INI
             'email' => 'galeriplut@gmail.com', // <-- GANTI INI
-            'password' => Hash::make('plut123'), // <-- GANTI INI
+            'password' => Hash::make('plut123456'), // <-- GANTI INI
             'role' => 'penjual', // <-- GANTI INI
             'is_approved' => true,
             'created_at' => now(),
