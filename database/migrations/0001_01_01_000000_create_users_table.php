@@ -26,8 +26,8 @@ return new class extends Migration
         // User 1 (yang sudah ada)
         [
             'nama' => 'Admin1',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('admin123'), // ganti password sesuai keinginan
+            'email' => 'adminbangkit@gmail.com',
+            'password' => Hash::make('adminbangkit123'), // ganti password sesuai keinginan
             'role' => 'admin',
             'is_approved' => true,
             'created_at' => now(),
@@ -35,9 +35,9 @@ return new class extends Migration
         ],
         // User 2 (TAMBAHAN ANDA)
         [
-            'nama' => 'Galeri PLUT', // <-- GANTI INI
-            'email' => 'galeriplut@gmail.com', // <-- GANTI INI
-            'password' => Hash::make('plut123'), // <-- GANTI INI
+            'nama' => 'Galeri UMKM', // <-- GANTI INI
+            'email' => 'galeriumkm@gmail.com', // <-- GANTI INI
+            'password' => Hash::make('umkm12345'), // <-- GANTI INI
             'role' => 'penjual', // <-- GANTI INI
             'is_approved' => true,
             'created_at' => now(),
