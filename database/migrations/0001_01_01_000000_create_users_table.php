@@ -35,9 +35,9 @@ return new class extends Migration
         ],
         // User 2 (TAMBAHAN ANDA)
         [
-            'nama' => 'Galeri UMKM', // <-- GANTI INI
-            'email' => 'galeriumkm@gmail.com', // <-- GANTI INI
-            'password' => Hash::make('umkm12345'), // <-- GANTI INI
+            'nama' => 'Galeri PLUT', // <-- GANTI INI
+            'email' => 'galeriplut@gmail.com', // <-- GANTI INI
+            'password' => Hash::make('plut123456'), // <-- GANTI INI
             'role' => 'penjual', // <-- GANTI INI
             'is_approved' => true,
             'created_at' => now(),
